@@ -3,6 +3,8 @@
  * from the SDL_RenderCopy function to render frames from an imported PNG
  * stored in one texture, scrolling through an array of SDL_Rect in order to
  * achieve this.
+ *
+ * Also using the vsync mode.
  */
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
