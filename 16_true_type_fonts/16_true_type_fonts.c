@@ -89,39 +89,6 @@ LTexture *free_texture(LTexture *lt)
 	return lt;
 }
 
-short loadFromFile(LTexture *lt, char *path)
-{
-	free_texture(lt);
-
-	SDL_Texture* newTexture = NULL;
-
-	SDL_Surface* loadedSurface = IMG_Load(path);
-	if(loadedSurface == NULL) {
-		SDL_SetError("%s(), IMG_Load failed to load \"%s\".",
-				__func__, path);
-		return -1;
-	}
-
-	SDL_SetColorKey(loadedSurface, SDL_TRUE, SDL_MapRGB(
-				loadedSurface->format, 0, 0xFF, 0xFF));
-
-	newTexture = SDL_CreateTextureFromSurface(gRenderer, loadedSurface);
-	if(newTexture == NULL) {
-		SDL_SetError("%s(), SDL_CreateTextureFromSurface failed.",
-				__func__);
-		return -1;
-	}
-
-	lt->mWidth = loadedSurface->w;
-	lt->mHeight = loadedSurface->h;
-
-	SDL_FreeSurface(loadedSurface);
-
-	lt->mTexture = newTexture;
-
-	return 0;
-}
-
 short loadFromRenderedText(LTexture *lt, char *textureText, SDL_Color textColor)
 {
 	free_texture(lt);

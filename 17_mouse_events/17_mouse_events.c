@@ -105,7 +105,7 @@ short LTexture_loadFromFile(LTexture *lt, char *path)
 
 	SDL_Surface* loadedSurface = IMG_Load(path);
 	if(loadedSurface == NULL) {
-		SDL_SetError("%s(), IMG_Load failed to load \"%s\".",
+		SDL_Log("%s(), IMG_Load failed to load \"%s\".",
 				__func__, path);
 		return -1;
 	}
@@ -117,7 +117,7 @@ short LTexture_loadFromFile(LTexture *lt, char *path)
 
 	newTexture = SDL_CreateTextureFromSurface(gRenderer, loadedSurface);
 	if(newTexture == NULL) {
-		SDL_SetError("%s(), SDL_CreateTextureFromSurface failed.",
+		SDL_Log("%s(), SDL_CreateTextureFromSurface failed.",
 				__func__);
 		return -1;
 	}

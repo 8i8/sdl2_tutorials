@@ -46,10 +46,8 @@ int init()
  */
 int loadMedia()
 {
-	if((gStretchedSurface = loadSurface("stretch.bmp")) == NULL) {
-		SDL_Log("error: %s() %s", __func__, SDL_GetError());
+	if((gStretchedSurface = loadSurface("stretch.bmp")) == NULL)
 		return -1;
-	}
 
 	return 0;
 }
@@ -78,7 +76,7 @@ SDL_Surface* loadSurface(char *path)
 
 	SDL_Surface* loadedSurface = SDL_LoadBMP((char*)path);
 	if(loadedSurface == NULL) {
-		SDL_SetError("%s(), SDL_LoadBMP failed.", __func__);
+		SDL_Log("%s(), SDL_LoadBMP failed.", __func__);
 		return NULL;
 	}
 
@@ -87,7 +85,7 @@ SDL_Surface* loadSurface(char *path)
 						gScreenSurface->format,
 						SDL_SWSURFACE);
 	if(optimizedSurface == NULL) {
-		SDL_SetError("%s(), SDL_ConvertSurface failed.", __func__);
+		SDL_Log("%s(), SDL_ConvertSurface failed.", __func__);
 		return NULL;
 	}
 

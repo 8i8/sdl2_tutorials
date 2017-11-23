@@ -25,7 +25,7 @@ int init()
 		return 1; 
 	}
 
-	if(SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "1") < 0)
+	if(SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "1") == 0)
 		SDL_Log("warning: %s() Linear texture filtering not enabled.",
 				__func__);
 

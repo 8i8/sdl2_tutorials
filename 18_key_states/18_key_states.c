@@ -93,7 +93,7 @@ short LTexture_loadFromFile(LTexture *lt, char *path)
 
 	SDL_Surface* loadedSurface = IMG_Load(path);
 	if(loadedSurface == NULL) {
-		SDL_SetError("%s(), IMG_Load failed to load \"%s\".",
+		SDL_Log("%s(), IMG_Load failed to load \"%s\".",
 				__func__, path);
 		return -1;
 	}
@@ -105,7 +105,7 @@ short LTexture_loadFromFile(LTexture *lt, char *path)
 
 	newTexture = SDL_CreateTextureFromSurface(gRenderer, loadedSurface);
 	if(newTexture == NULL) {
-		SDL_SetError("%s(), SDL_CreateTextureFromSurface failed.",
+		SDL_Log("%s(), SDL_CreateTextureFromSurface failed.",
 				__func__);
 		return -1;
 	}
@@ -142,30 +142,20 @@ short LTexture_render(
 
 short loadMedia()
 {
-	if(LTexture_loadFromFile(&gPressTexture, "press.png")) {
-		printf("Failed to load press texture!\n");
+	if(LTexture_loadFromFile(&gPressTexture, "press.png"))
 		return -1;
-	}
 	
-	if(LTexture_loadFromFile(&gUpTexture, "up.png")) {
-		printf("Failed to load up texture!\n");
+	if(LTexture_loadFromFile(&gUpTexture, "up.png"))
 		return -1;
-	}
 
-	if(LTexture_loadFromFile(&gDownTexture, "down.png")) {
-		printf("Failed to load down texture!\n");
+	if(LTexture_loadFromFile(&gDownTexture, "down.png"))
 		return -1;
-	}
 
-	if(LTexture_loadFromFile(&gLeftTexture, "left.png")) {
-		printf("Failed to load left texture!\n");
+	if(LTexture_loadFromFile(&gLeftTexture, "left.png"))
 		return -1;
-	}
 
-	if(LTexture_loadFromFile(&gRightTexture, "right.png")) {
-		printf("Failed to load right texture!\n");
+	if(LTexture_loadFromFile(&gRightTexture, "right.png"))
 		return -1;
-	}
 
 	return 0;
 }

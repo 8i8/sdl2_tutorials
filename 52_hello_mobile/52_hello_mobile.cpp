@@ -391,7 +391,7 @@ bool init()
 	else
 	{
 		//Set texture filtering to linear
-		if(!SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "1"))
+		if(SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "1") == 0)
 		{
 			SDL_Log("Warning: Linear texture filtering not enabled!");
 		}

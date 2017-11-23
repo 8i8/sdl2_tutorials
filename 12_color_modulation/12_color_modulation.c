@@ -88,7 +88,7 @@ short loadFromFile(LTexture *lt, char *path)
 
 	SDL_Surface* loadedSurface = IMG_Load((char*)path);
 	if(loadedSurface == NULL) {
-		SDL_SetError("%s(), IMG_Load failed to load \"%s\".",
+		SDL_Log("%s(), IMG_Load failed to load \"%s\".",
 				__func__, path);
 		return -1;
 	}
@@ -98,7 +98,7 @@ short loadFromFile(LTexture *lt, char *path)
 
 	newTexture = SDL_CreateTextureFromSurface(gRenderer, loadedSurface);
 	if(newTexture == NULL) {
-		SDL_SetError("%s(), SDL_CreateTextureFromSurface failed.",
+		SDL_Log("%s(), SDL_CreateTextureFromSurface failed.",
 				__func__);
 		return -1;
 	}
@@ -142,10 +142,9 @@ int LTexture_getHeight(LTexture *lt)
 
 short loadMedia()
 {
-	if(loadFromFile(&gModulatedTexture, "colors.png")) {
-		SDL_Log("%s(), %s", __func__, SDL_GetError());
+	if(loadFromFile(&gModulatedTexture, "colors.png"))
 		return -1;
-	}
+
 	return 0;
 }
 

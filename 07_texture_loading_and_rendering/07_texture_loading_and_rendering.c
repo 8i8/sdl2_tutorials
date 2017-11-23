@@ -24,11 +24,13 @@ SDL_Texture* gTexture = NULL;
 
 short init()
 {
-	if(SDL_Init(SDL_INIT_VIDEO) < 0)
-		return SDL_GetError();
+	if(SDL_Init(SDL_INIT_VIDEO) < 0) {
+		SDL_Log("%s(), SDL_Init failed.", __func__);
+		return -1;
+	}
 
 	if(SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "1") == 0)
-		return SDL_SetError("%s() Linear texture filtering not enabled.",
+		SDL_Log("%s() Linear texture filtering not enabled.",
 				__func__);
 
 	gWindow = SDL_CreateWindow(
@@ -38,18 +40,24 @@ short init()
 					SCREEN_WIDTH,
 					SCREEN_HEIGHT,
 					SDL_WINDOW_SHOWN);
-	if(gWindow == NULL)
-		return SDL_SetError("%s(): SDL_CreateWindow failed.", __func__);
+	if(gWindow == NULL) {
+		SDL_Log("%s(): SDL_CreateWindow failed.", __func__);
+		return -1;
+	}
 
 	gRenderer = SDL_CreateRenderer(gWindow, -1, SDL_RENDERER_ACCELERATED);
 
-	if(gRenderer == NULL)
-		return SDL_SetError("%s(): SDL_CreateRenderer failed.", __func__);
+	if(gRenderer == NULL) {
+		SDL_Log("%s(): SDL_CreateRenderer failed.", __func__);
+		return -1;
+	}
 
 	SDL_SetRenderDrawColor(gRenderer, 0xFF, 0xFF, 0xFF, 0xFF);
 
-	if((IMG_Init(IMG_INIT_PNG) & IMG_INIT_PNG) == 0)
-		return SDL_SetError("%s(): IMG_Init failed.", __func__);
+	if((IMG_Init(IMG_INIT_PNG) & IMG_INIT_PNG) == 0) {
+		SDL_Log("%s(): IMG_Init failed.", __func__);
+		return -1;
+	}
 
 	return 0;
 }
@@ -57,7 +65,7 @@ short init()
 short loadMedia()
 {
 	if((gTexture = loadTexture((char*)"texture.png")) == NULL)
-		return SDL_SetError("%s(): loadTexture failed.", __func__);
+		return -1;
 
 	return 0;
 }
@@ -68,13 +76,18 @@ SDL_Texture* loadTexture(char *path)
 	SDL_Texture* newTexture = NULL;
 	SDL_Surface* loadedSurface;
 	
-	if((loadedSurface = IMG_Load((char*)path)) == NULL)
-		return SDL_SetError("%s(): IMG_Load failed.", __func__);
+	if((loadedSurface = IMG_Load((char*)path)) == NULL) {
+		SDL_Log("%s(): IMG_Load failed.", __func__);
+		return NULL;
+	}
 
 	if((newTexture = SDL_CreateTextureFromSurface(
-					gRenderer, loadedSurface)) == NULL)
-		return SDL_SetError("%s(): SDL_CreateTextureFromSurface failed.",
+					gRenderer, loadedSurface)) == NULL) {
+		SDL_Log("%s(): SDL_CreateTextureFromSurface failed.",
 				__func__);
+		return NULL;
+	}
+	
 
 	SDL_FreeSurface(loadedSurface);
 
