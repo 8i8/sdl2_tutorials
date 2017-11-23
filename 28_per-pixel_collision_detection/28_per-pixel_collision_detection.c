@@ -1,23 +1,20 @@
-/*This source code copyrighted by Lazy Foo' Productions (2004-2015)
-and may not be redistributed without written permission.*/
-
-//Using SDL, SDL_image, standard IO, vectors, and strings
+/*
+ * This program demonstrates pixel level collision detection.
+ *
+ * TODO Note that this implimentation will only work when the DOT_VEL is set to
+ * one, if it is set any higher ther is a space between the two dots when a
+ * collision is detected.
+ */
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
 #include <stdio.h>
 
-#define DOTS	11
-
-//Screen dimension constants
-const int SCREEN_WIDTH = 640;
-const int SCREEN_HEIGHT = 480;
-
-//The dimensions of the dot
+#define ZONES		11
+#define SCREEN_WIDTH	640
+#define SCREEN_HEIGHT	480
 #define DOT_WIDTH	20
 #define DOT_HEIGHT	20
-
-//Maximum axis velocity of the dot
-static const int DOT_VEL = 1;
+#define DOT_VEL		5
 
 typedef struct {
 	SDL_Texture *mTexture;
@@ -28,21 +25,56 @@ typedef struct {
 typedef struct {
 	int mPosX, mPosY;
 	int mVelX, mVelY;
-	//Dot's collision boxes
-	SDL_Rect mColliders[DOTS];
+	SDL_Rect mColliders[ZONES];
 } Dot;
 
-//Box set collision detector
 short checkCollision(SDL_Rect *a, SDL_Rect *b);
 void Dot_shiftColliders(Dot *d);
 
-SDL_Window* gWindow = NULL;		//The window we'll be rendering to
-SDL_Renderer* gRenderer = NULL;		//The window renderer
-LTexture gDotTexture;			//Scene textures
+SDL_Window* gWindow = NULL;
+SDL_Renderer* gRenderer = NULL;
+LTexture gDotTexture;
+
+short init()
+{
+	if(SDL_Init(SDL_INIT_VIDEO) < 0) {
+		SDL_Log("%s(), SDL_Init failed.", __func__);
+		return -1;
+	}
+
+	gWindow = SDL_CreateWindow(
+					"SDL Tutorial",
+					SDL_WINDOWPOS_UNDEFINED,
+					SDL_WINDOWPOS_UNDEFINED,
+					SCREEN_WIDTH,
+					SCREEN_HEIGHT,
+					SDL_WINDOW_SHOWN);
+	if(gWindow == NULL) {
+		SDL_Log("%s(), SDL_CreateWindow failed.", __func__);
+		return -1;
+	}
+
+	gRenderer = SDL_CreateRenderer(
+					gWindow,
+					-1,
+					SDL_RENDERER_ACCELERATED);
+	if(gRenderer == NULL) {
+		SDL_Log("%s(), SDL_CreateRenderer failed.", __func__);
+		return -1;
+	}
+
+	SDL_SetRenderDrawColor(gRenderer, 0xFF, 0xFF, 0xFF, 0xFF);
+
+	if((IMG_Init(IMG_INIT_PNG) & IMG_INIT_PNG) == 0) {
+		SDL_Log("%s(), IMG_Init failed.", __func__);
+		return -1;
+	}
+
+	return 0;
+}
 
 LTexture *free_texture(LTexture *lt)
 {
-	//Free texture if it exists
 	if(lt->mTexture != NULL)
 	{
 		SDL_DestroyTexture(lt->mTexture);
@@ -55,138 +87,59 @@ LTexture *free_texture(LTexture *lt)
 
 short LTexture_loadFromFile(LTexture *lt, char *path)
 {
-	//Get rid of preexisting texture
 	free_texture(lt);
 
-	//The final texture
 	SDL_Texture* newTexture = NULL;
 
-	//Load image at specified path
 	SDL_Surface* loadedSurface = IMG_Load(path);
 	if(loadedSurface == NULL) {
-		printf("Unable to load image %s! SDL_image Error: %s\n",
-				path, IMG_GetError());
+		SDL_Log("%s(), IMG_Load failed to load \"%s\".",
+				__func__, path);
 		return -1;
 	}
 
-	//Color key image
 	SDL_SetColorKey(
 			loadedSurface,
 			SDL_TRUE,
 			SDL_MapRGB(loadedSurface->format, 0, 0xFF, 0xFF));
 
-	//Create texture from surface pixels
 	newTexture = SDL_CreateTextureFromSurface(gRenderer, loadedSurface);
 	if(newTexture == NULL) {
-		printf("Unable to create texture from %s! SDL Error: %s\n",
-				path, SDL_GetError());
-		return 1;
+		SDL_Log("%s(), SDL_CreateTextureFromSurface failed.",
+				__func__);
+		return -1;
 	}
 
-	//Get image dimensions
 	lt->mWidth = loadedSurface->w;
 	lt->mHeight = loadedSurface->h;
 
-	//Get rid of old loaded surface
 	SDL_FreeSurface(loadedSurface);
 
-	//Return success
 	lt->mTexture = newTexture;
 
 	return 0;
 }
 
-#ifdef _SDL_TTF_H
-short LTexture_loadFromRenderedText(
-					LTexture *lt,
-					char *textureText,
-					SDL_Color textColor)
-{
-	//Get rid of preexisting texture
-	free_texture(lt);
-
-	//Render text surface
-	SDL_Surface* textSurface = TTF_RenderText_Solid(
-						gFont, textureText, textColor);
-	if(textSurface == NULL) {
-		printf("Unable to render text surface! SDL_ttf Error: %s\n",
-				TTF_GetError());
-		return -1;
-	}
-
-	//Create texture from surface pixels
-	lt->mTexture = SDL_CreateTextureFromSurface(gRenderer, textSurface);
-	if(lt->mTexture == NULL) {
-		printf("Unable to create texture from rendered text! SDL Error: %s\n",
-				SDL_GetError() );
-		return -1;
-	}
-
-	//Get image dimensions
-	lt->mWidth = textSurface->w;
-	lt->mHeight = textSurface->h;
-
-	//Get rid of old surface
-	SDL_FreeSurface(textSurface);
-	
-	return 0;
-}
-#endif
-
-void LTexture_setColor(LTexture *lt, Uint8 red, Uint8 green, Uint8 blue)
-{
-	//Modulate texture rgb
-	SDL_SetTextureColorMod(lt->mTexture, red, green, blue);
-}
-
-void LTexture_setBlendMode(LTexture *lt, SDL_BlendMode blending)
-{
-	//Set blending function
-	SDL_SetTextureBlendMode(lt->mTexture, blending);
-}
-		
-void LTexture_setAlpha(LTexture *lt, Uint8 alpha)
-{
-	//Modulate texture alpha
-	SDL_SetTextureAlphaMod(lt->mTexture, alpha);
-}
-
 short LTexture_render(LTexture *lt, int x, int y, SDL_Rect* clip)
 {
-	//Set rendering space and render to screen
 	SDL_Rect renderQuad = {x, y, lt->mWidth, lt->mHeight};
 
-	//Set clip rendering dimensions
 	if(clip != NULL) {
 		renderQuad.w = clip->w;
 		renderQuad.h = clip->h;
 	}
 
-	//Render to screen
 	return SDL_RenderCopy(gRenderer, lt->mTexture, clip, &renderQuad);
-}
-
-int LTexture_getWidth(LTexture *lt)
-{
-	return lt->mWidth;
-}
-
-int LTexture_getHeight(LTexture *lt)
-{
-	return lt->mHeight;
 }
 
 void Dot_init(Dot *d, int x, int y)
 {
-	//Initialize the offsets
 	d->mPosX = x;
 	d->mPosY = y;
 
-	//Initialize the velocity
 	d->mVelX = 0;
 	d->mVelY = 0;
 
-	//Initialize the collision boxes' width and height
 	d->mColliders[0].w = 6;
 	d->mColliders[0].h = 1;
 	d->mColliders[1].w = 10;
@@ -210,16 +163,13 @@ void Dot_init(Dot *d, int x, int y)
 	d->mColliders[10].w = 6;
 	d->mColliders[10].h = 1;
 
-	//Initialize colliders relative to position
 	Dot_shiftColliders(d);
 }
 
 void Dot_handleEvent(Dot *d, SDL_Event *e)
 {
-	//If a key was pressed
 	if(e->type == SDL_KEYDOWN && e->key.repeat == 0)
 	{
-		//Adjust the velocity
 		switch(e->key.keysym.sym)
 		{
 			case SDLK_UP: 	d->mVelY -= DOT_VEL; break;
@@ -228,10 +178,8 @@ void Dot_handleEvent(Dot *d, SDL_Event *e)
 			case SDLK_RIGHT:d->mVelX += DOT_VEL; break;
 		}
 	}
-	//If a key was released
 	else if(e->type == SDL_KEYUP && e->key.repeat == 0)
 	{
-		//Adjust the velocity
 		switch(e->key.keysym.sym)
 		{
 			case SDLK_UP:	d->mVelY += DOT_VEL; break;
@@ -244,32 +192,26 @@ void Dot_handleEvent(Dot *d, SDL_Event *e)
 
 void Dot_move(Dot *d, SDL_Rect *otherColliders)
 {
-	//Move the dot left or right
 	d->mPosX += d->mVelX;
 	Dot_shiftColliders(d);
 
-	//If the dot collided or went too far to the left or right
 	if(
 			(d->mPosX < 0)
 			|| (d->mPosX + DOT_WIDTH > SCREEN_WIDTH)
 			|| checkCollision(d->mColliders, otherColliders))
 	{
-		//Move back
 		d->mPosX -= d->mVelX;
 		Dot_shiftColliders(d);
 	}
 
-	//Move the dot up or down
 	d->mPosY += d->mVelY;
 	Dot_shiftColliders(d);
 
-	//If the dot collided or went too far up or down
 	if(
 			(d->mPosY < 0)
 			|| (d->mPosY + DOT_HEIGHT > SCREEN_HEIGHT)
 			|| checkCollision(d->mColliders, otherColliders))
 	{
-		//Move back
 		d->mPosY -= d->mVelY;
 		Dot_shiftColliders(d);
 	}
@@ -277,201 +219,117 @@ void Dot_move(Dot *d, SDL_Rect *otherColliders)
 
 void Dot_render(Dot *d)
 {
-	//Show the dot
 	LTexture_render(&gDotTexture, d->mPosX, d->mPosY, NULL);
 }
 
 void Dot_shiftColliders(Dot *d)
 {
-	//The row offset
-	int set, r;
+	int zone, r;
 	r = 0;
 
-	//Go through the dot's collision boxes
-	for(set = 0; set < DOTS; ++set)
+	for(zone = 0; zone < ZONES; ++zone)
 	{
-		//Center the collision box
-		d->mColliders[set].x =
-			d->mPosX + (DOT_WIDTH - d->mColliders[set].w) / 2;
+		d->mColliders[zone].x =
+			d->mPosX + (DOT_WIDTH - d->mColliders[zone].w) / 2;
 
-		//Set the collision box at its row offset
-		d->mColliders[set].y = d->mPosY + r;
+		d->mColliders[zone].y = d->mPosY + r;
 
-		//Move the row offset down the height of the collision box
-		r += d->mColliders[set].h;
+		r += d->mColliders[zone].h;
 	}
-}
-
-short init()
-{
-	//Initialize SDL
-	if(SDL_Init(SDL_INIT_VIDEO) < 0) {
-		printf("SDL could not initialize! SDL Error: %s\n",
-				SDL_GetError());
-		return -1;
-	}
-
-	//Set texture filtering to linear
-	if(!SDL_SetHint( SDL_HINT_RENDER_SCALE_QUALITY, "1") == 0)
-		printf("Warning: Linear texture filtering not enabled!" );
-
-	//Create window
-	gWindow = SDL_CreateWindow(
-					"SDL Tutorial",
-					SDL_WINDOWPOS_UNDEFINED,
-					SDL_WINDOWPOS_UNDEFINED,
-					SCREEN_WIDTH,
-					SCREEN_HEIGHT,
-					SDL_WINDOW_SHOWN);
-	if(gWindow == NULL) {
-		printf("Window could not be created! SDL Error: %s\n",
-				SDL_GetError());
-		return -1;
-	}
-
-	//Create vsynced renderer for window
-	gRenderer = SDL_CreateRenderer(
-					gWindow,
-					-1,
-					SDL_RENDERER_ACCELERATED |
-					SDL_RENDERER_PRESENTVSYNC);
-	if(gRenderer == NULL) {
-		printf("Renderer could not be created! SDL Error: %s\n",
-				SDL_GetError());
-		return -1;
-	}
-
-	//Initialize renderer color
-	SDL_SetRenderDrawColor(gRenderer, 0xFF, 0xFF, 0xFF, 0xFF);
-
-	//Initialize PNG loading
-	if((IMG_Init(IMG_INIT_PNG) & IMG_INIT_PNG) == 0) {
-		printf("SDL_image could not initialize! SDL_image Error: %s\n",
-				IMG_GetError());
-		return -1;
-	}
-
-	return 0;
 }
 
 short loadMedia()
 {
-	if(LTexture_loadFromFile(&gDotTexture, "dot.bmp")) {
-		printf("Failed to load dot texture!\n");
+	if(LTexture_loadFromFile(&gDotTexture, "dot.bmp"))
 		return -1;
-	}
 	return 0;
 }
 
 void close_all()
 {
-	//Free loaded images
 	free_texture(&gDotTexture);
 
-	//Destroy window	
 	SDL_DestroyRenderer(gRenderer);
 	SDL_DestroyWindow(gWindow);
 	gWindow = NULL;
 	gRenderer = NULL;
 
-	//Quit SDL subsystems
 	IMG_Quit();
 	SDL_Quit();
 }
 
 short checkCollision(SDL_Rect *a, SDL_Rect *b)
 {
-	//The sides of the rectangles
 	int leftA, leftB;
 	int rightA, rightB;
 	int topA, topB;
 	int bottomA, bottomB;
-
 	int Abox, Bbox;
 
-	for(Abox = 0; Abox < DOTS; Abox++ )
+	for(Abox = 0; Abox < ZONES; Abox++ )
 	{
-		//Calculate the sides of rect A
 		leftA = a[Abox].x;
 		rightA = a[Abox].x + a[Abox].w;
 		topA = a[Abox].y;
 		bottomA = a[Abox].y + a[Abox].h;
 
-		for(Bbox = 0; Bbox < DOTS; Bbox++ )
+		for(Bbox = 0; Bbox < ZONES; Bbox++ )
 		{
-			//Calculate the sides of rect B
 			leftB = b[Bbox].x;
 			rightB = b[Bbox].x + b[Bbox].w;
 			topB = b[Bbox].y;
 			bottomB = b[Bbox].y + b[Bbox].h;
 
-			//If no sides from A are outside of B
 			if(
-					((bottomA <= topB) ||
-					 (topA >= bottomB) ||
-					 (rightA <= leftB) ||
-					 (leftA >= rightB)
-					 ) == 0)
-			{
+					((bottomA <= topB)
+					|| (topA >= bottomB)
+					|| (rightA <= leftB)
+					|| (leftA >= rightB))
+					== 0)
 				return 1;
-			}
 		}
 	}
 
-	//If neither set of collision boxes touched
 	return 0;
 }
 
 int main(int argc, char* argv[])
 {
-	//Start up SDL and create window
-	if (init()) {
-		printf("Failed to initialize!\n");
+	if (init())
 		goto equit;
-	}
 
-	if(loadMedia()) {
-		printf("Failed to load media!\n");
+	if(loadMedia())
 		goto equit;
-	}
 
 	SDL_Event e;
 
-	//The dot that will be moving around on the screen
 	Dot dot;
 	Dot_init(&dot, 0, 0);
 	
-	//The dot that will be collided against
 	Dot otherDot;
 	Dot_init(&otherDot, SCREEN_WIDTH / 4, SCREEN_HEIGHT / 4);
 	
-	//While application is running
 	while(1)
 	{
 		while(SDL_PollEvent(&e) != 0) {
 			if(e.type == SDL_QUIT)
 				goto equit;
 
-			//Handle input for the dot
 			Dot_handleEvent(&dot, &e);
 		}
 
-		//Move the dot and check collision
 		Dot_move(&dot, otherDot.mColliders);
 
-		//Clear screen
 		SDL_SetRenderDrawColor(gRenderer, 0xFF, 0xFF, 0xFF, 0xFF);
 		SDL_RenderClear(gRenderer);
 		
-		//Render dots
 		Dot_render(&dot);
 		Dot_render(&otherDot);
 
-		//Update screen
 		SDL_RenderPresent(gRenderer);
+		SDL_Delay(16);
 	}
 equit:
-	//Free resources and close SDL
 	close_all();
 
 	return 0;
