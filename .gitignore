@@ -2,3 +2,4 @@ cscope.out
 *.swp
 *.swo
 notes
+p[0-9][0-9]*
