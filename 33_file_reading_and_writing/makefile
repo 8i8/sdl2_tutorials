@@ -4,7 +4,7 @@ CC = gcc
 
 COMPILER_FLAGS = -g -Wall -Wextra -pedantic -fsanitize=address -fno-omit-frame-pointer
 
-LINKER_FLAGS = -lSDL2 -lSDL2_image -lSDL2_ttf
+LINKER_FLAGS = -lSDL2 -lSDL2_ttf
 
 OBJ_NAME = p33_file_reading_and_writing
 
