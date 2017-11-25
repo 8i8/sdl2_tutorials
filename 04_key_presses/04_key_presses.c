@@ -30,7 +30,7 @@ SDL_Surface* gKeyPressSurfaces[KEY_PRESS_SURFACE_TOTAL];
 
 short init()
 {
-	if (SDL_Init(SDL_INIT_VIDEO) < 0) {
+	if(SDL_Init(SDL_INIT_VIDEO) < 0) {
 		SDL_Log("%s(), SDL_Init failed. %s", __func__, SDL_GetError());
 		return -1;
 	}
@@ -42,7 +42,7 @@ short init()
 					SCREEN_WIDTH,
 					SCREEN_HEIGHT,
 					SDL_WINDOW_SHOWN);
-	if (gWindow == NULL) {
+	if(gWindow == NULL) {
 		SDL_Log("%s(), SDL_CreateWindow failed.", __func__);
 		return -1;
 	}
@@ -55,31 +55,31 @@ short init()
 short loadMedia()
 {
 	gKeyPressSurfaces[KEY_PRESS_SURFACE_DEFAULT] = SDL_LoadBMP((char*)"press.bmp");
-	if (gKeyPressSurfaces[KEY_PRESS_SURFACE_DEFAULT] == NULL) {
+	if(gKeyPressSurfaces[KEY_PRESS_SURFACE_DEFAULT] == NULL) {
 		SDL_Log("%s(): Failed to load default image.", __func__);
 		return -1;
 	}
 
 	gKeyPressSurfaces[KEY_PRESS_SURFACE_UP] = SDL_LoadBMP((char*)"up.bmp");
-	if (gKeyPressSurfaces[KEY_PRESS_SURFACE_UP] == NULL) {
+	if(gKeyPressSurfaces[KEY_PRESS_SURFACE_UP] == NULL) {
 		SDL_Log("%s(): Failed to load up image.", __func__);
 		return -1;
 	}
 
 	gKeyPressSurfaces[KEY_PRESS_SURFACE_DOWN] = SDL_LoadBMP((char*)"down.bmp");
-	if (gKeyPressSurfaces[KEY_PRESS_SURFACE_DOWN] == NULL) {
+	if(gKeyPressSurfaces[KEY_PRESS_SURFACE_DOWN] == NULL) {
 		SDL_Log("%s(): Failed to load down image.", __func__);
 		return -1;
 	}
 
 	gKeyPressSurfaces[KEY_PRESS_SURFACE_LEFT] = SDL_LoadBMP((char*)"left.bmp");
-	if (gKeyPressSurfaces[KEY_PRESS_SURFACE_LEFT] == NULL) {
+	if(gKeyPressSurfaces[KEY_PRESS_SURFACE_LEFT] == NULL) {
 		SDL_Log("%s(): Failed to load left image.", __func__);
 		return -1;
 	}
 
 	gKeyPressSurfaces[KEY_PRESS_SURFACE_RIGHT] = SDL_LoadBMP((char*)"right.bmp");
-	if (gKeyPressSurfaces[KEY_PRESS_SURFACE_RIGHT] == NULL) {
+	if(gKeyPressSurfaces[KEY_PRESS_SURFACE_RIGHT] == NULL) {
 		SDL_Log("%s(): Failed to load right image.", __func__);
 		return -1;
 	}
@@ -104,9 +104,9 @@ void close_all()
 
 int get_event(SDL_Event e)
 {
-	if (e.type == SDL_QUIT)
+	if(e.type == SDL_QUIT)
 		return -1;
-	if (e.type == SDL_KEYDOWN)
+	if(e.type == SDL_KEYDOWN)
 	{
 		switch(e.key.keysym.sym)
 		{
@@ -138,16 +138,16 @@ int main(int argc, char* args[])
 {
 	SDL_Event e;
 
-	if (init())
+	if(init())
 		goto equit;
-	if (loadMedia())
+	if(loadMedia())
 		goto equit;
 
 	gCurrentSurface = gKeyPressSurfaces[KEY_PRESS_SURFACE_DEFAULT];
 
-	while (1)
+	while(1)
 	{
-		while (SDL_PollEvent(&e)!= 0)
+		while(SDL_PollEvent(&e)!= 0)
 			if(get_event(e))
 				goto equit;
 

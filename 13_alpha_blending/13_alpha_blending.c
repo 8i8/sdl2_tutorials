@@ -52,7 +52,7 @@ short init()
 
 	SDL_SetRenderDrawColor(gRenderer, 0xFF, 0xFF, 0xFF, 0xFF);
 
-	if ((IMG_Init(IMG_INIT_PNG) & IMG_INIT_PNG) == 0) {
+	if((IMG_Init(IMG_INIT_PNG) & IMG_INIT_PNG) == 0) {
 		SDL_Log("%s(), IMG_Init failed.", __func__);
 		return -1;
 	}
@@ -193,7 +193,7 @@ int main(int argc, char* argv[])
 	SDL_Rect* clip = NULL;
 	Uint8 a = 255;
 
-	if (init())
+	if(init())
 		goto equit;
 
 	if(loadMedia())

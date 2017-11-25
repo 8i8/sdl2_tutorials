@@ -17,7 +17,7 @@ int main(int argc, char* args[])
 	SDL_Window* wWindow = NULL;
 	SDL_Surface* sScreen = NULL;
 
-	if (SDL_Init(SDL_INIT_VIDEO) < 0) {
+	if(SDL_Init(SDL_INIT_VIDEO) < 0) {
 		SDL_Log("error: %s(): %s\n", __func__, SDL_GetError());
 		goto equit;
 	}
@@ -30,15 +30,15 @@ int main(int argc, char* args[])
 					SCREEN_HEIGHT,
 					SDL_WINDOW_SHOWN
 					| SDL_WINDOW_RESIZABLE);
-	if (wWindow == NULL) {
+	if(wWindow == NULL) {
 		SDL_Log("error: %s(): gWindow could not be created.", __func__);
 		goto equit;
 	}
 
-	while (1)
+	while(1)
 	{
 		while(SDL_PollEvent(&e))
-			if (e.type == SDL_QUIT)
+			if(e.type == SDL_QUIT)
 				goto equit;
 		 
 		sScreen = SDL_GetWindowSurface(wWindow);

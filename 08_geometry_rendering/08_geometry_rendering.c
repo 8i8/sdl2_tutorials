@@ -156,9 +156,9 @@ int main(int argc, char* args[])
 		yellow_dotted_line();
 
 		my_points(x, y, 6);
-		if ((x += 4)  >= SCREEN_WIDTH)
+		if((x += 4)  >= SCREEN_WIDTH)
 			x = 0;
-		if (++y == SCREEN_HEIGHT)
+		if(++y == SCREEN_HEIGHT)
 			y = 0;
 
 		SDL_RenderPresent(gRenderer);

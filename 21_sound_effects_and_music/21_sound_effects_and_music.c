@@ -212,9 +212,9 @@ void get_key_pressed(SDL_Event *e)
 			Mix_PlayChannel(-1, gScratch, 0);
 			break;
 		case SDLK_9:
-			if (Mix_PlayingMusic() == 0)
+			if(Mix_PlayingMusic() == 0)
 				Mix_PlayMusic(gMusic, -1);
-			else if (Mix_PausedMusic() == 1)
+			else if(Mix_PausedMusic() == 1)
 				Mix_ResumeMusic();
 			else
 				Mix_PauseMusic();

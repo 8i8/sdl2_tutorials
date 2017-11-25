@@ -1,21 +1,18 @@
-/*This source code copyrighted by Lazy Foo' Productions (2004-2015)
-and may not be redistributed without written permission.*/
-
-//Using SDL, SDL_image, standard IO, and, strings
+/*
+ * This program demonstrates the movement of the dot indipendant of the frame
+ * rate.
+ */
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
 #include <stdio.h>
 
 enum truth { false, true };
 
-//Screen dimension constants
-const int SCREEN_WIDTH = 640;
-const int SCREEN_HEIGHT = 480;
-
-static const int DOT_WIDTH = 20;
-static const int DOT_HEIGHT = 20;
-
-static const int DOT_VEL = 640;
+#define SCREEN_WIDTH	640
+#define SCREEN_HEIGHT	480
+#define DOT_WIDTH	20
+#define DOT_HEIGHT	20
+#define DOT_VEL		640
 
 typedef struct {
 	SDL_Texture* mTexture;
@@ -37,9 +34,48 @@ typedef struct {
 	float mVelX, mVelY;
 } Dot;
 
-SDL_Window* gWindow = NULL;		//The window we'll be rendering to
-SDL_Renderer* gRenderer = NULL;		//The window renderer
-LTexture gDotTexture;			//Scene textures
+SDL_Window* gWindow = NULL;
+SDL_Renderer* gRenderer = NULL;
+LTexture gDotTexture;
+
+short init()
+{
+	if(SDL_Init(SDL_INIT_VIDEO) < 0) {
+		SDL_Log("%s(), SDL_Init failed.", __func__);
+		return -1;
+	}
+
+	if(SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "1") == 0)
+		SDL_Log("%s(), Warning: Linear texture filtering not enabled.",
+				__func__);
+
+	gWindow = SDL_CreateWindow(
+					"SDL Tutorial",
+					SDL_WINDOWPOS_UNDEFINED,
+					SDL_WINDOWPOS_UNDEFINED,
+					SCREEN_WIDTH,
+					SCREEN_HEIGHT,
+					SDL_WINDOW_SHOWN);
+	if(gWindow == NULL) {
+		SDL_Log("%s(), SDL_CreateWindow failed.", __func__);
+		return -1;
+	}
+
+	gRenderer = SDL_CreateRenderer(gWindow, -1, SDL_RENDERER_ACCELERATED);
+	if(gRenderer == NULL) {
+		SDL_Log("%s(), SDL_CreateRenderer failed.", __func__);
+		return -1;
+	}
+
+	SDL_SetRenderDrawColor(gRenderer, 0xFF, 0xFF, 0xFF, 0xFF);
+
+	if((IMG_Init(IMG_INIT_PNG) & IMG_INIT_PNG) == 0) {
+		SDL_Log("%s(), IMG_Init failed. %s", __func__, IMG_GetError());
+		return -1;
+	}
+
+	return 0;
+}
 
 void LTexture_free(LTexture *lt)
 {
@@ -55,32 +91,26 @@ void LTexture_free(LTexture *lt)
 
 short LTexture_loadFromFile(LTexture *lt, char *path)
 {
-	//Get rid of preexisting texture
 	LTexture_free(lt);
 
-	//The final texture
 	SDL_Texture* newTexture = NULL;
 
-	//Load image at specified path
 	SDL_Surface* loadedSurface = IMG_Load(path);
 	if(loadedSurface == NULL) {
-		printf("Unable to load image %s! SDL_image Error: %s\n",
-				path, IMG_GetError());
+		SDL_Log("%s(), IMG_Load failed to load \"%s\".",
+				__func__, path);
 		return -1;
 	}
 
-	//Convert surface to display format
 	SDL_Surface* formattedSurface = SDL_ConvertSurfaceFormat(
-						loadedSurface,
-						SDL_PIXELFORMAT_RGBA8888,
-						SDL_SWSURFACE);
+							loadedSurface,
+							SDL_PIXELFORMAT_RGBA8888,
+							SDL_SWSURFACE);
 	if(formattedSurface == NULL) {
-		printf("Unable to convert loaded surface to display format! %s\n",
-				SDL_GetError());
+		SDL_Log("%s(), SDL_ConvertSurfaceFormat failed.", __func__);
 		return -1;
 	}
 
-	//Create blank streamable texture
 	newTexture = SDL_CreateTexture(
 					gRenderer,
 					SDL_PIXELFORMAT_RGBA8888,
@@ -88,139 +118,48 @@ short LTexture_loadFromFile(LTexture *lt, char *path)
 					formattedSurface->w,
 					formattedSurface->h);
 	if(newTexture == NULL) {
-		printf("Unable to create blank texture! SDL Error: %s\n",
-				SDL_GetError());
+		SDL_Log("%s(), SDL_CreateTextureFromSurface failed.", __func__);
 		return -1;
 	}
 
-	//Enable blending on texture
 	SDL_SetTextureBlendMode(newTexture, SDL_BLENDMODE_BLEND);
 
-	//Lock texture for manipulation
 	SDL_LockTexture(
 				newTexture,
 				&formattedSurface->clip_rect,
 				&lt->mPixels,
 				&lt->mPitch);
 
-	//Copy loaded/formatted surface pixels
 	memcpy(
 			lt->mPixels,
 			formattedSurface->pixels,
 			formattedSurface->pitch * formattedSurface->h);
 
-	//Get image dimensions
 	lt->mWidth = formattedSurface->w;
 	lt->mHeight = formattedSurface->h;
 
-	//Get pixel data in editable format
 	Uint32* pixels = (Uint32*)lt->mPixels;
 	int pixelCount = (lt->mPitch / 4) * lt->mHeight;
 
-	//Map colors				
 	Uint32 colorKey = SDL_MapRGB(formattedSurface->format, 0, 0xFF, 0xFF);
 	Uint32 transparent = SDL_MapRGBA(
 			formattedSurface->format, 0x00, 0xFF, 0xFF, 0x00);
 
-	//Color key pixels
 	int i;
 	for(i = 0; i < pixelCount; ++i)
 		if(pixels[i] == colorKey)
 			pixels[i] = transparent;
 
-	//Unlock texture to update
 	SDL_UnlockTexture(newTexture);
 	lt->mPixels = NULL;
 
-	//Get rid of old formatted surface
 	SDL_FreeSurface(formattedSurface);
 		
-	//Get rid of old loaded surface
 	SDL_FreeSurface(loadedSurface);
 
-	//Return success
 	lt->mTexture = newTexture;
 
 	return 0;
-}
-
-#ifdef _SDL_TTF_H
-short LTexture_loadFromRenderedText(
-					LTexture *lt,
-					char *textureText,
-					SDL_Color textColor)
-{
-	//Get rid of preexisting texture
-	Ltexture_free(lt);
-
-	//Render text surface
-	SDL_Surface* textSurface = TTF_RenderText_Solid(
-							gFont,
-							textureText,
-							textColor);
-	if(textSurface != NULL) {
-		printf("Unable to render text surface! SDL_ttf Error: %s\n",
-				TTF_GetError());
-		return -1;
-	}
-
-	//Create texture from surface pixels
-	lt->mTexture = SDL_CreateTextureFromSurface(gRenderer, textSurface);
-	if(lt->mTexture == NULL) {
-		printf("Unable to create texture from rendered text! SDL Error: %s\n",
-				SDL_GetError());
-		return -1;
-	}
-
-	lt->mWidth = textSurface->w;
-	lt->mHeight = textSurface->h;
-
-	SDL_FreeSurface(textSurface);
-	
-	return 0;
-}
-#endif
-		
-short LTexture_createBlank(
-				LTexture *lt,
-				int width, int height,
-				SDL_TextureAccess access)
-{
-	//Create uninitialized texture
-	lt->mTexture = SDL_CreateTexture(
-					gRenderer,
-					SDL_PIXELFORMAT_RGBA8888,
-					access,
-					width,
-					height);
-	if(lt->mTexture == NULL) {
-		printf("Unable to create blank texture! SDL Error: %s\n",
-				SDL_GetError());
-		return -1;
-	}
-
-	lt->mWidth = width;
-	lt->mHeight = height;
-
-	return 0;
-}
-
-void LTexture_setColor(LTexture *lt, Uint8 red, Uint8 green, Uint8 blue)
-{
-	//Modulate texture rgb
-	SDL_SetTextureColorMod(lt->mTexture, red, green, blue);
-}
-
-void LTexture_setBlendMode(LTexture *lt, SDL_BlendMode blending)
-{
-	//Set blending function
-	SDL_SetTextureBlendMode(lt->mTexture, blending);
-}
-		
-void LTexture_setAlpha(LTexture *lt, Uint8 alpha)
-{
-	//Modulate texture alpha
-	SDL_SetTextureAlphaMod(lt->mTexture, alpha);
 }
 
 void LTexture_render(
@@ -231,93 +170,15 @@ void LTexture_render(
 			SDL_Point* center,
 			SDL_RendererFlip flip)
 {
-	//Set rendering space and render to screen
 	SDL_Rect renderQuad = { x, y, lt->mWidth, lt->mHeight };
 
-	//Set clip rendering dimensions
 	if(clip != NULL) {
 		renderQuad.w = clip->w;
 		renderQuad.h = clip->h;
 	}
 
-	//Render to screen
 	SDL_RenderCopyEx(gRenderer, lt->mTexture, clip,
 				&renderQuad, angle, center, flip);
-}
-
-void LTexture_setAsRenderTarget(LTexture *lt)
-{
-	//Make self render target
-	SDL_SetRenderTarget(gRenderer, lt->mTexture);
-}
-
-int LTexture_getWidth(LTexture *lt)
-{
-	return lt->mWidth;
-}
-
-int LTexture_getHeight(LTexture *lt)
-{
-	return lt->mHeight;
-}
-
-short LTexture_lockTexture(LTexture *lt)
-{
-	if(lt->mPixels != NULL) {
-		printf("Texture is already locked!\n");
-		return -1;
-	}
-
-	if(SDL_LockTexture(lt->mTexture, NULL, &lt->mPixels, &lt->mPitch) != 0) {
-		printf("Unable to lock texture! %s\n", SDL_GetError());
-		return -1;
-	}
-	return 0;
-}
-
-short LTexture_unlockTexture(LTexture *lt)
-{
-	if(lt->mPixels == NULL) {
-		printf("Texture is not locked!\n");
-		return -1;
-	}
-
-	SDL_UnlockTexture(lt->mTexture);
-	lt->mPixels = NULL;
-	lt->mPitch = 0;
-
-	return 0;
-}
-
-void* LTexture_getPixels(LTexture *lt)
-{
-	return lt->mPixels;
-}
-
-void LTexture_copyPixels(LTexture *lt, void* pixels)
-{
-	if(lt->mPixels != NULL)
-		memcpy(lt->mPixels, pixels, lt->mPitch * lt->mHeight);
-}
-
-int LTexture_getPitch(LTexture *lt)
-{
-	return lt->mPitch;
-}
-
-Uint32 LTexture_getPixel32(LTexture *lt, unsigned int x, unsigned int y)
-{
-	Uint32 *pixels = (Uint32*)lt->mPixels;
-
-	return pixels[(y * (lt->mPitch / 4)) + x];
-}
-
-void LTimer_init(LTimer *t)
-{
-	t->mStartTicks = 0;
-	t->mPausedTicks = 0;
-	t->mPaused = false;
-	t->mStarted = false;
 }
 
 void LTimer_start(LTimer *t)
@@ -326,32 +187,6 @@ void LTimer_start(LTimer *t)
 	t->mPaused = false;
 	t->mStartTicks = SDL_GetTicks();
 	t->mPausedTicks = 0;
-}
-
-void LTimer_stop(LTimer *t)
-{
-	t->mStarted = false;
-	t->mPaused = false;
-	t->mStartTicks = 0;
-	t->mPausedTicks = 0;
-}
-
-void LTimer_pause(LTimer *t)
-{
-	if(t->mStarted && !t->mPaused) {
-		t->mPaused = true;
-		t->mPausedTicks = SDL_GetTicks() - t->mStartTicks;
-		t->mStartTicks = 0;
-	}
-}
-
-void LTimer_unpause(LTimer *s)
-{
-	if(s->mStarted && s->mPaused) {
-		s->mPaused = false;
-		s->mStartTicks = SDL_GetTicks() - s->mPausedTicks;
-		s->mPausedTicks = 0;
-	}
 }
 
 Uint32 LTimer_getTicks(LTimer *t)
@@ -366,24 +201,6 @@ Uint32 LTimer_getTicks(LTimer *t)
 	}
 
 	return time;
-}
-
-short LTimer_isStarted(LTimer *t)
-{
-	return t->mStarted;
-}
-
-short LTimer_isPaused(LTimer *t)
-{
-	return t->mPaused && t->mStarted;
-}
-
-void Dot_init(Dot *d)
-{
-	d->mPosX = 0;
-	d->mPosY = 0;
-	d->mVelX = 0;
-	d->mVelY = 0;
 }
 
 void Dot_handleEvent(Dot *d, SDL_Event *e)
@@ -410,19 +227,15 @@ void Dot_handleEvent(Dot *d, SDL_Event *e)
 
 void Dot_move(Dot *d,float timeStep)
 {
-	//Move the dot left or right
 	d->mPosX += d->mVelX * timeStep;
 
-	//If the dot went too far to the left or right
 	if(d->mPosX < 0)
 		d->mPosX = 0;
 	else if(d->mPosX > SCREEN_WIDTH - DOT_WIDTH)
 		d->mPosX = SCREEN_WIDTH - DOT_WIDTH;
 	
-	//Move the dot up or down
 	d->mPosY += d->mVelY * timeStep;
 
-	//If the dot went too far up or down
 	if(d->mPosY < 0)
 		d->mPosY = 0;
 	else if(d->mPosY > SCREEN_HEIGHT - DOT_HEIGHT)
@@ -435,60 +248,10 @@ void Dot_render(Dot *d)
 			NULL, 0.0, NULL, 0);
 }
 
-short init()
-{
-	if(SDL_Init(SDL_INIT_VIDEO) < 0) {
-		printf("SDL could not initialize! SDL Error: %s\n",
-				SDL_GetError());
-		return -1;
-	}
-
-	//Set texture filtering to linear
-	if(SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "1") == 0)
-		printf("Warning: Linear texture filtering not enabled!");
-
-	//Create window
-	gWindow = SDL_CreateWindow(
-					"SDL Tutorial",
-					SDL_WINDOWPOS_UNDEFINED,
-					SDL_WINDOWPOS_UNDEFINED,
-					SCREEN_WIDTH,
-					SCREEN_HEIGHT,
-					SDL_WINDOW_SHOWN);
-	if(gWindow == NULL) {
-		printf("Window could not be created! SDL Error: %s\n",
-				SDL_GetError());
-		return -1;
-	}
-
-	//Create renderer for window
-	gRenderer = SDL_CreateRenderer(gWindow, -1, SDL_RENDERER_ACCELERATED);
-	if(gRenderer == NULL) {
-		printf("Renderer could not be created! SDL Error: %s\n",
-				SDL_GetError());
-		return -1;
-	}
-
-	//Initialize renderer color
-	SDL_SetRenderDrawColor(gRenderer, 0xFF, 0xFF, 0xFF, 0xFF);
-
-	//Initialize PNG loading
-	if((IMG_Init(IMG_INIT_PNG) & IMG_INIT_PNG) == 0) {
-		printf("SDL_image could not initialize! SDL_image Error: %s\n",
-				IMG_GetError());
-		return -1;
-	}
-
-	return 0;
-}
-
 short loadMedia()
 {
-	if(LTexture_loadFromFile(&gDotTexture, "dot.bmp")) {
-		printf("Failed to load dot texture!\n");
+	if(LTexture_loadFromFile(&gDotTexture, "dot.bmp"))
 		return -1;
-	}
-
 	return 0;
 }
 
@@ -510,15 +273,11 @@ int main(int argc, char* args[])
 	Dot dot;
 	LTimer stepTimer;
 
-	if(init()) {
-		printf("Failed to initialize!\n");
+	if(init())
 		goto equit;
-	}
 
-	if(loadMedia()) {
-		printf("Failed to load media!\n");
+	if(loadMedia())
 		goto equit;
-	}
 
 	SDL_Event e;
 

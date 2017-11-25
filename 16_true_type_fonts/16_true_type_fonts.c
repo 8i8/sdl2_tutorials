@@ -37,7 +37,7 @@ short init()
 
 	/* TODO test the effect of this filter on text. */
 	if(SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "1") == 0)
-		printf("Warning: Linear texture filtering not enabled!");
+		SDL_Log("%s(), Warning: Linear texture filtering failed.", __func__);
 
 	gWindow = SDL_CreateWindow(
 					"SDL Tutorial",

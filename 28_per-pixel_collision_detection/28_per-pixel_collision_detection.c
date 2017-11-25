@@ -295,7 +295,7 @@ short checkCollision(SDL_Rect *a, SDL_Rect *b)
 
 int main(int argc, char* argv[])
 {
-	if (init())
+	if(init())
 		goto equit;
 
 	if(loadMedia())

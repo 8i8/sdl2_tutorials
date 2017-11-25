@@ -73,7 +73,7 @@ short init()
 	SDL_SetRenderDrawColor(gRenderer, 0xFF, 0xFF, 0xFF, 0xFF);
 
 	if((IMG_Init(IMG_INIT_PNG) & IMG_INIT_PNG) == 0) {
-		SDL_Log("%s(), TTF_Init failed. %s", __func__, TTF_GetError());
+		SDL_Log("%s(), IMG_Init failed. %s", __func__, IMG_GetError());
 		return -1;
 	}
 
@@ -92,7 +92,7 @@ void LTexture_free(LTexture *lt)
 
 short LTexture_loadFromFile(LTexture *lt, char *path)
 {
-	free_texture(lt);
+	LTexture_free(lt);
 
 	SDL_Texture* newTexture = NULL;
 
@@ -110,8 +110,7 @@ short LTexture_loadFromFile(LTexture *lt, char *path)
 
 	newTexture = SDL_CreateTextureFromSurface(gRenderer, loadedSurface);
 	if(newTexture == NULL) {
-		SDL_Log("%s(), SDL_CreateTextureFromSurface failed.",
-				__func__);
+		SDL_Log("%s(), SDL_CreateTextureFromSurface failed.", __func__);
 		return -1;
 	}
 

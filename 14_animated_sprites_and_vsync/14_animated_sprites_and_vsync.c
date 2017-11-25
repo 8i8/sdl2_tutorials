@@ -55,7 +55,7 @@ short init()
 		return -1;
 	}
 
-	if ((IMG_Init(IMG_INIT_PNG) & IMG_INIT_PNG) == 0) {
+	if((IMG_Init(IMG_INIT_PNG) & IMG_INIT_PNG) == 0) {
 		SDL_Log("%s(), IMG_Init failed.", __func__);
 		return -1;
 	}
