@@ -1,3 +1,7 @@
+/*
+ * This program demonstrates the use of a perticle engine to generate a small
+ * cloud of particles.
+ */
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
 #include <stdio.h>

@@ -1,5 +1,5 @@
 /*
- * This program demonstrates the movement of the dot indipendant of the frame
+ * This program demonstrates the movement of the dot, indipendant of the frame
  * rate.
  */
 #include <SDL2/SDL.h>
@@ -37,6 +37,7 @@ typedef struct {
 SDL_Window* gWindow = NULL;
 SDL_Renderer* gRenderer = NULL;
 LTexture gDotTexture;
+Dot dot;
 
 short init()
 {
@@ -73,6 +74,8 @@ short init()
 		SDL_Log("%s(), IMG_Init failed. %s", __func__, IMG_GetError());
 		return -1;
 	}
+
+	Dot_init(&dot);
 
 	return 0;
 }
@@ -203,6 +206,14 @@ Uint32 LTimer_getTicks(LTimer *t)
 	return time;
 }
 
+void Dot_init(Dot *d)
+{
+	d->mPosX = 0;
+	d->mPosY = 0;
+	d->mVelX = 0;
+	d->mVelY = 0;
+}
+
 void Dot_handleEvent(Dot *d, SDL_Event *e)
 {
 	if(e->type == SDL_KEYDOWN && e->key.repeat == 0) {
@@ -225,7 +236,7 @@ void Dot_handleEvent(Dot *d, SDL_Event *e)
 	}
 }
 
-void Dot_move(Dot *d,float timeStep)
+void Dot_move(Dot *d, float timeStep)
 {
 	d->mPosX += d->mVelX * timeStep;
 
@@ -270,8 +281,8 @@ void close_all()
 
 int main(int argc, char* args[])
 {
-	Dot dot;
 	LTimer stepTimer;
+	float timeStep;
 
 	if(init())
 		goto equit;
@@ -283,24 +294,20 @@ int main(int argc, char* args[])
 
 	while(1)
 	{
-		while(SDL_PollEvent(&e) != 0)
-		{
+		while(SDL_PollEvent(&e) != 0) {
 			if(e.type == SDL_QUIT)
 				goto equit;
 
 			Dot_handleEvent(&dot, &e);
 		}
 
-		float timeStep = LTimer_getTicks(&stepTimer) / 1000.f;
+		timeStep = LTimer_getTicks(&stepTimer) / 1000.f;
 		Dot_move(&dot, timeStep);
-
 		LTimer_start(&stepTimer);
 
 		SDL_SetRenderDrawColor(gRenderer, 0xFF, 0xFF, 0xFF, 0xFF);
 		SDL_RenderClear(gRenderer);
-
 		Dot_render(&dot);
-
 		SDL_RenderPresent(gRenderer);
 	}
 equit:
