@@ -1,13 +1,16 @@
 /*
- * This program demonstrates multithreading.
+ * This program demonstrates multithreading using SDL_Thread and SDL_CreateThread.
+ *
+ * https://wiki.libsdl.org/SDL_Thread
+ * https://wiki.libsdl.org/SDL_CreateThread
  */
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_thread.h>
 #include <SDL2/SDL_image.h>
 #include <stdio.h>
 
-const int SCREEN_WIDTH = 640;
-const int SCREEN_HEIGHT = 480;
+#define SCREEN_WIDTH	640
+#define SCREEN_HEIGHT	480
 
 typedef struct {
 	SDL_Texture* mTexture;
@@ -88,9 +91,9 @@ short LTexture_loadFromFile(LTexture *lt, char *path)
 	}
 
 	SDL_Surface* formattedSurface = SDL_ConvertSurfaceFormat(
-							loadedSurface,
-							SDL_PIXELFORMAT_RGBA8888,
-							SDL_SWSURFACE);
+					loadedSurface,
+					SDL_PIXELFORMAT_RGBA8888,
+					SDL_SWSURFACE);
 	if(formattedSurface == NULL) {
 		SDL_Log("%s(), SDL_ConvertSurfaceFormat failed.", __func__);
 		return -1;
@@ -184,8 +187,8 @@ void close_all()
 
 int threadFunction(void* data)
 {
-	int i = (int)data;
-	printf("Running thread with value = %d\n", i);
+	int *i = (int*)data;
+	SDL_Log("Running thread with value = %d", *i);
 
 	return 0;
 }
@@ -202,7 +205,7 @@ int main(int argc, char* args[])
 	SDL_Thread* threadID = SDL_CreateThread(
 						threadFunction,
 						"LazyThread",
-						(void*)data);
+						(void*)&data);
 	SDL_Event e;
 
 	while(1)

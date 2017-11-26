@@ -25,7 +25,7 @@ SDL_Haptic* gControllerHaptic = NULL;
 short init()
 {
 	if(SDL_Init(SDL_INIT_VIDEO | SDL_INIT_JOYSTICK | SDL_INIT_HAPTIC)) {
-		SDL_Log("%s(), SDL_Init failed.", __func__);
+		SDL_Log("%s(), SDL_Init failed. %s", __func__, SDL_GetError());
 		return -1;
 	}
 
