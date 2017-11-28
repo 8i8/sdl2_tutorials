@@ -1,25 +1,30 @@
 /*
- * This program demonstrates the use of mouse events as an SDL_Event using
- * SDL_GetMouseState and various SDL_Event flags.
+ * Mouse Events
  *
- * https://wiki.libsdl.org/SDL_Event
- * https://wiki.libsdl.org/SDL_MouseButtonEvent
+ * Like with key presses, SDL has event structures to handle mouse events such
+ * as mouse motion, mouse button presses, and mouse button releasing. In this
+ * tutorial we'll make a bunch of buttons we can interact with.
  *
- * SDL_MOUSEMOTION
- * SDL_MOUSEBUTTONDOWN
- * SDL_MOUSEBUTTONUP
+ * We're making a slight modification to the texture class. For this tutorial
+ * we won't be using SDL_ttf to render text. This means we don't need the
+ * loadFromRenderedText function.
  */
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
 #include <stdio.h>
 
-const int SCREEN_WIDTH = 640;
-const int SCREEN_HEIGHT = 480;
-
-const int BUTTON_WIDTH = 300;
-const int BUTTON_HEIGHT = 200;
+#define SCREEN_WIDTH	640
+#define SCREEN_HEIGHT	480
+#define BUTTON_WIDTH	300
+#define BUTTON_HEIGHT	200
 #define TOTAL_BUTTONS	4
 
+/*
+ * For this tutorial we'll have 4 buttons on the screen. Depending on whether
+ * the mouse moved over, clicked on, released on, or moved out of the button
+ * we'll display a different sprite. These constants are here to define all
+ * this.
+ */
 typedef enum {
 	BUTTON_SPRITE_MOUSE_OUT = 0,
 	BUTTON_SPRITE_MOUSE_OVER_MOTION = 1,
@@ -34,6 +39,12 @@ typedef struct {
 	int mHeight;
 } LTexture;
 
+/*
+ * Here is the struct to represent a button. It has related functions, a
+ * position setter, an event handler for the event loop, and a rendering
+ * function. It also has a position and a sprite enumeration so we know which
+ * sprite to render for the button.
+ */
 typedef struct {
 	SDL_Point mPosition;
 	LButtonSprite mCurrentSprite;
@@ -151,7 +162,9 @@ short LTexture_render(
 	return SDL_RenderCopyEx(gRenderer, lt->mTexture, clip,
 				&renderQuad, angle, center, flip);
 }
-
+/*
+ * Here is the position setting function.
+ */
 void LButton_setPosition(LButton *bt, int x, int y)
 {
 	bt->mPosition.x = x;
@@ -159,7 +172,20 @@ void LButton_setPosition(LButton *bt, int x, int y)
 }
 
 /*
- * The mouse events are listend for in main program loop.
+ * Here's the meat of the tutorial where we handle the mouse events. This
+ * function will be called in the event loop and will handle an event taken
+ * from the event queue for an individual button.
+ *
+ * First we check if the event coming in is a mouse event specifically a mouse
+ * motion event (when the mouse moves), a mouse button down event (when you
+ * click a mouse button), or a mouse button up event (when you release a mouse
+ * click).
+ *
+ * If one of these mouse events do occur, we check the mouse position using
+ * SDL_GetMouseState. Depending on whether the mouse is over the button or not,
+ * we'll want to display different sprites.
+ *
+ * https://wiki.libsdl.org/SDL_GetMouseState
  */
 short LButton_handleEvent(LButton *lb, SDL_Event* e)
 {
@@ -172,7 +198,18 @@ short LButton_handleEvent(LButton *lb, SDL_Event* e)
 		short active = 1;
 
 		SDL_GetMouseState(&x, &y);
-
+/*
+ * Here we want to check if the mouse is inside the button or not. Since we use
+ * a different coordinate system with SDL, the origin of the button is at the
+ * top left. This means every x coordinate less than the x position is outside
+ * of the button and every y coordinate less than the y position is too.
+ * Everything right of the button is the x position + the width and everything
+ * below the button is the y position + the height.
+ *
+ * This is what this piece of code does. If the mouse position is in any way
+ * outside the button, it marks the inside marker as false. Otherwise it
+ * remains the initial true value.
+ */
 		if(x < lb->mPosition.x) {
 			active = 0;
 		}
@@ -190,7 +227,14 @@ short LButton_handleEvent(LButton *lb, SDL_Event* e)
 			lb->mCurrentSprite = BUTTON_SPRITE_MOUSE_OUT;
 			return 0;
 		}
-
+/*
+ * Finally, we set the button sprite depending on whether the mouse is inside
+ * the button and the mouse event.
+ *
+ * If the mouse isn't inside the button, we set the mouse out sprite. If the
+ * mouse is inside we set the sprite to mouse over on a mouse motion, mouse
+ * down on a mouse button press, and mouse up on a mouse button release.
+ */
 		switch(e->type)
 		{
 			case SDL_MOUSEMOTION:
@@ -209,6 +253,10 @@ short LButton_handleEvent(LButton *lb, SDL_Event* e)
 	return 0;
 }
 	
+/*
+ * In the rendering function, we just render the current button sprite at the
+ * button position. 
+ */
 void LButton_render(LButton *lb)
 {
 	LTexture_render(
@@ -255,6 +303,15 @@ void close_all()
 	SDL_Quit();
 }
 
+/*
+ * Here is our main loop. In the event loop, we handle the quit event and the
+ * events for all the buttons. In the rendering section, all the buttons are
+ * rendered to the screen.
+ *
+ * There are also mouse wheel events which weren't covered here, but if you
+ * look at the documentation and play around with it it shouldn't be too hard
+ * to figure out.
+ */
 int main(int argc, char* argv[])
 {
 	int i;

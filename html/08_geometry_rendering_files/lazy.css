@@ -1,0 +1,309 @@
+/*Generic Classes*/
+body
+{
+	font-family: monospace;
+	color: #CCCCCC;
+	background-color: #000000;
+}
+
+h1
+{
+	width: 100%;
+	color: #FFFFFF;
+	text-align: center;
+}
+
+h2
+{
+	text-align: center;
+	color: #FFFFFF;
+}
+
+h3
+{
+	text-align: center;
+	color: #FFFFFF;
+}
+
+h5
+{
+	color: #FFFFFF;
+	text-align: center;
+}
+
+h6
+{
+	color: #FFFFFF;
+	text-align: center;
+}
+
+b
+{
+	color: #FFFFFF;
+}
+
+/*Layout Classes*/
+div.header
+{
+
+}
+
+div.nav
+{
+	padding: 10px 10px 10px 10px;
+	text-align: center;
+}
+
+a.nav
+{
+	padding: 10px 10px 10px 10px;
+	color: #FFFF88;
+}
+
+div.content
+{
+	
+}
+
+a.download
+{
+	color: #FFAAAA;
+}
+
+div.ads
+{
+	margin: 10px auto 10px auto;
+	text-align: center;
+}
+
+div.footer
+{
+
+}
+
+/*News related classes*/
+div.date
+{
+	width: 80%;
+	color: #FFFFFF;
+	margin: 0px auto 10px auto;
+	white-space: pre;
+	font-size: large;
+}
+
+div.announcement
+{
+	width: 80%;
+	margin: 0px auto 50px auto;
+}
+
+div.CSULB
+{
+	width: 80%;
+	margin: 0px auto 300px auto;
+}
+
+/*Game Related classes*/
+div.gamelisting
+{
+	padding: 10px 10px 10px 10px;
+	text-align: center;
+}
+
+/*Article Related classes*/
+table.artToC
+{
+	margin: 0px auto 50px auto;
+	width: 80%;
+	height: 480px;
+}
+
+td.artToCTitle
+{
+	background-color: #2222FF;
+	border: thin solid #FFFFFF;
+	color: #FFFFFF;
+	height: 30px;
+	text-align: center;
+}
+
+td.artLink
+{
+	background-color: #111144;
+	border: thin solid #FFFFFF;
+	text-align: center;
+}
+
+
+/*Tutorial related classes*/
+/*Table ToC*/
+table.tutToC
+{
+	margin: 0px auto 50px auto;
+	width: 80%;
+}
+
+td.ToCTitle
+{
+	background-color: #2222FF;
+	border: thin solid #FFFFFF;
+	color: #FFFFFF;
+	height: 30px;
+	text-align: center;
+}
+
+td.tutLink
+{
+	background-color: #111144;
+	text-align: center;
+}
+a.tutLink
+{
+	margin: 0px auto 0px auto;
+	color: #8888FF;
+}
+
+div.tutorial
+{
+	
+}
+
+div.tutTitle
+{
+	height: 30px;
+	width: 80%;
+	text-align: center;
+	color: #FFFFFF;
+	margin: 0px auto 0px auto;
+	padding: 5px 10px 0px 10px;
+	background-color: #2222FF;
+}
+
+div.tutPrev
+{
+	margin: 5px auto 10px auto;
+	padding: 10px 0px 10px 0px;
+	width: 80%;
+	text-align: center;
+}
+
+div.tutDesc
+{
+	height: 190px;
+	width: 80%;
+	overflow: auto;
+	margin: 0px auto 50px auto;
+	padding: 10px 10px 0px 10px;
+	border: thin solid #FFFFFF;
+	background-color: #111144;
+	text-align: left;
+}
+
+h1.tutHead
+{
+	width: 80%;
+	margin: 20px auto 10px auto;
+	padding: 0px 10px 0px 10px;
+}
+
+div.tutPreface
+{
+	width: 80%;
+	margin: 30px auto 50px auto;
+	padding: 10px 5px 10px 5px;
+	border: thin solid #111144;
+	background-color: #000044;
+	text-align: left;
+}
+
+div.tutCodeHeader
+{
+	width: 80%;
+	margin: 0px auto 0px auto;
+	background-color: #2222FF;
+	border: thin solid #FFFFFF;
+	color: #FFFFFF;
+	text-align: left;
+}
+
+div.tutCode
+{
+	width: 80%;
+	margin: 10px auto 10px auto;
+	background-color: #000044;
+	border: thin solid #222266;
+	color: #DDDDFF;
+	white-space: pre;
+}
+
+div.tutText
+{
+	width: 80%;
+	border: thin solid #111144;
+	background-color: #000022;
+	margin: 0px auto 40px auto;
+}
+
+div.tutImg
+{
+	margin: 0px auto 0px auto;
+	text-align: center;
+}
+
+div.tutFooter
+{
+	width: 80%;
+	margin: 30px auto 50px auto;
+	padding: 10px 5px 10px 5px;
+	border: thin solid #111144;
+	background-color: #000044;
+	text-align: left;
+}
+
+a.leftNav
+{
+	float: left;
+	color: #FFFF88;
+}
+
+a.rightNav
+{
+	float: right;
+	color: #FFFF88;
+}
+
+/*blog classes*/
+div.blogTitle
+{
+	color: #CCCCFF;
+	width: 80%;
+	margin: 30px auto 10px auto;
+	padding: 10px 5px 10px 5px;
+	border: thin solid #CCCCFF;
+	background-color: #000044;
+	text-align: left;
+	font-size: x-large
+}
+
+div.blogDate
+{
+	color: #FFFFFF;
+	margin: 0px auto 10px 50px;
+	white-space: pre;
+	font-size: large;
+}
+
+div.devBlog
+{
+	width: 80%;
+	border: thin solid #CCCCFF;
+	background-color: #000022;
+	padding: 10px 5px 50px 5px;
+	margin: 0px auto 40px auto;
+}
+
+a.blogLink
+{
+	margin: 0px auto 0px auto;
+	color: #AAAAFF;
+}

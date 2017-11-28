@@ -1,17 +1,24 @@
 /*
- * This programs demonstrates the rotation and the flippiing of a texture using
- * SDL_RendererFlip(). This program allso make a good example of
- * SDL_HINT_RENDER_SCALE_QUALITY.
+ * Rotation and Flipping
  *
- * https://wiki.libsdl.org/SDL_RendererFlip
+ * SDL 2's hardware accelerated texture rendering also gives ability to give us
+ * fast image flipping and rotation. In this tutorial we'll be using this to
+ * make an arrow texture spin and flip.
+ *
+ * Here we're adding more functionality to LTexture_render. The render
+ * function now takes in a rotation angle, a point to rotate the texture
+ * around, and a SDL flipping enum.
+ *
+ * Like with clipping rectangles, we give the arguments default values in case
+ * you want to render the texture without rotation or flipping.
  */
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
 #include <stdio.h>
 #include <math.h>
 
-const int SCREEN_WIDTH = 640;
-const int SCREEN_HEIGHT = 480;
+#define SCREEN_WIDTH	640
+#define SCREEN_HEIGHT	480
 
 typedef struct {
 	SDL_Texture *mTexture;
@@ -19,7 +26,6 @@ typedef struct {
 	int mHeight;
 } LTexture;
 
-/* The flip type defined here is used to effect the rendered image */
 typedef struct {
 	SDL_RendererFlip flipType;
 	double degrees;
@@ -117,6 +123,11 @@ short loadFromFile(LTexture *lt, char *path)
 	return 0;
 }
 
+/*
+ * As you can see, all we're doing is passing in the arguments from our
+ * function to SDL_RenderCopyEx. This function works the same as the original
+ * SDL_RenderCopy, but with additional arguments for rotation and flipping.
+ */
 short LTexture_render(
 		LTexture *lt,
 		int x,
@@ -168,7 +179,10 @@ void close_all()
 	SDL_Quit();
 }
 
-/* The values held in SDL_RendererFlip are set here with a key press. */
+/*
+ * In the event loop, we want to increment/decrement the rotation with the a/d
+ * keys and change the type of flipping with the q,w, and e keys.
+ */
 void get_key_press(SDL_Event *e, Data *d)
 {
 	switch(e->key.keysym.sym)
@@ -195,6 +209,10 @@ void get_key_press(SDL_Event *e, Data *d)
 	}
 }
 
+/*
+ * Before we enter the main loop we declare variables to keep track of the
+ * rotation angle and flipping type. 
+ */
 int main(int argc, char* argv[])
 {
 	SDL_Event e;
@@ -221,7 +239,24 @@ int main(int argc, char* argv[])
 
 		SDL_SetRenderDrawColor(gRenderer, 0xFF, 0xFF, 0xFF, 0xFF);
 		SDL_RenderClear(gRenderer);
-
+/*
+ * Here we do the actual rendering. First we pass in the texture then the x and
+ * y coordinates. That may seem like a complicated equation, but all it does
+ * is center the image. If the image is 440 pixels wide on a 640 pixel wide
+ * screen, we want it to be padded by 100 pixels on each side. In other words,
+ * the x coordinate will be the screen width (640) minus the image width (440)
+ * all divided by 2 ( (640 - 440 ) / 2 = 100).
+ *
+ * The next argument is the clip rectangle and since we're rendering the whole
+ * texture it is set to null. The next argument is the rotation angle in
+ * degrees. The next argument is the point we're rotation around. When this is
+ * null, it will rotate around the center of the image. The last argument is
+ * how the image flipped.
+ *
+ * The best way to wrap your mind around how to use rotation is to play around
+ * with it. Experiment to see the type of effects you get by combining
+ * different rotations/flipping.
+ */
 		LTexture_render(
 			&gArrowTexture,
 			(SCREEN_WIDTH - LTexture_getWidth(&gArrowTexture)) / 2,

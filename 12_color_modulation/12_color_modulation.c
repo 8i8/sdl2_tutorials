@@ -1,30 +1,31 @@
 /*
- * This program demonstrates colour the modulation of a texture using the
- * SDL_SetTextureColorMod() function.
+ * Color Modulation
  *
- * https://wiki.libsdl.org/SDL_SetTextureColorMod
+ * Color modulation allows you to alter the color of your rendered textures.
+ * Here we're going to modulate a texture using various colors.
  *
- * When this texture is rendered, during the copy operation each source color
- * channel is modulated by the appropriate color value according to the
- * following formula:
- *
- * 	srcC = srcC * (color / 255)
- *
- * Color modulation is not always supported by the renderer; it will return -1
- * if color modulation is not supported. 
+ * We're adding a function to the texture wrapper that will allow the texture
+ * modulation to be set. All it does is take in a red, green, and blue color
+ * components.
  */
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
 #include <stdio.h>
 
-const int SCREEN_WIDTH = 640;
-const int SCREEN_HEIGHT = 480;
+#define SCREEN_WIDTH	640
+#define SCREEN_HEIGHT	480
 
 typedef struct {
 	SDL_Texture *mTexture;
 	int mWidth;
 	int mHeight;
 } LTexture;
+
+typedef struct {
+	Uint8 r;
+	Uint8 g;
+	Uint8 b;
+} Colours;
 
 SDL_Window* gWindow = NULL;
 SDL_Renderer* gRenderer = NULL;
@@ -113,6 +114,22 @@ short loadFromFile(LTexture *lt, char *path)
 	return 0;
 }
 
+/*
+ * And setting texture modulation is as easy as making a call to
+ * SDL_SetTextureColorMod. You just pass in the texture you want to modulate
+ * and the color you want to modulate with.
+ *
+ * You may have noticed that SDL_SetTextureColorMod accepts Uint8 as arguments
+ * for the color components. An Uint8 is just an integer that is Unsigned and
+ * 8bit. This means it goes from 0 to 255. 128 is about halfway between 0 and
+ * 255, so when you modulate green to 128 it halves the green component for any
+ * pixel on the texture.
+ *
+ * The red and blue squares don't get affected because they have no green in
+ * them, but the green becomes half as bright and the white turns a light
+ * magenta (magenta is red 255, green 0, blue 255). Color modulation is just a
+ * way to multiply a color throughout the whole texture.
+ */
 void LTexture_setColor(LTexture *lt, Uint8 red, Uint8 green, Uint8 blue)
 {
 	SDL_SetTextureColorMod(lt->mTexture, red, green, blue);
@@ -128,16 +145,6 @@ short LTexture_render(LTexture *lt, int x, int y, SDL_Rect* clip)
 	}
 
 	return SDL_RenderCopy(gRenderer, lt->mTexture, clip, &renderQuad);
-}
-
-int LTexture_getWidth(LTexture *lt)
-{
-	return lt->mWidth;
-}
-
-int LTexture_getHeight(LTexture *lt)
-{
-	return lt->mHeight;
 }
 
 short loadMedia()
@@ -161,13 +168,56 @@ void close_all()
 	SDL_Quit();
 }
 
+/*
+ * In our event loop we'll have the q, w, and e keys increase the red, green,
+ * and blue components and we'll have the a, s, and d key decrease the red,
+ * green, and blue components. They increase/decrease the components by 32 so
+ * it's noticable with every key press.
+ */
+void get_event(SDL_Event *e, Colours *c)
+{
+	if(e->type == SDL_KEYDOWN)
+	{
+		switch(e->key.keysym.sym)
+		{
+			case SDLK_q:
+			c->r += 32;
+			break;
+			
+			case SDLK_w:
+			c->g += 32;
+			break;
+			
+			case SDLK_e:
+			c->b += 32;
+			break;
+			
+			case SDLK_a:
+			c->r -= 32;
+			break;
+			
+			case SDLK_s:
+			c->g -= 32;
+			break;
+			
+			case SDLK_d:
+			c->b -= 32;
+			break;
+		}
+	}
+}
+
+/*
+ * Here we are right before the main loop. For this demo we're going to
+ * modulate the individual color components using key presses. To do that we'll
+ * need to keep track of the values for the color components, to do this we
+ * create a struct in which to store the colour values.
+ */
 int main(int argc, char* argv[])
 {
 	SDL_Event e;
 	SDL_Rect* clip = NULL;
-	Uint8 r = 255;
-	Uint8 g = 255;
-	Uint8 b = 255;
+	Colours c = { 255, 255, 255 };
 
 	if(init())
 		goto equit;
@@ -181,41 +231,15 @@ int main(int argc, char* argv[])
 			if(e.type == SDL_QUIT)
 				goto equit;
 
-			if(e.type == SDL_KEYDOWN)
-			{
-				switch(e.key.keysym.sym)
-				{
-					case SDLK_q:
-					r += 32;
-					break;
-					
-					case SDLK_w:
-					g += 32;
-					break;
-					
-					case SDLK_e:
-					b += 32;
-					break;
-					
-					case SDLK_a:
-					r -= 32;
-					break;
-					
-					case SDLK_s:
-					g -= 32;
-					break;
-					
-					case SDLK_d:
-					b -= 32;
-					break;
-				}
-			}
+			get_event(&e, &c);
 		}
 
 		SDL_SetRenderDrawColor(gRenderer, 0xFF, 0xFF, 0xFF, 0xFF);
 		SDL_RenderClear(gRenderer);
-
-		LTexture_setColor(&gModulatedTexture, r, g, b);
+/*
+ * Here we are setting the texture modulation and rendering the texture. 
+ */
+		LTexture_setColor(&gModulatedTexture, c.r, c.g, c.b);
 		LTexture_render(&gModulatedTexture, 0, 0, clip);
 
 		SDL_RenderPresent(gRenderer);

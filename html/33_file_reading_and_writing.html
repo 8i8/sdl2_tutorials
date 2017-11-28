@@ -1,0 +1,383 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+<html><head>
+
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+        <meta name="KEYWORDS" content="C++ SDL 2 Tutorial 2D Windows Linux Mac binary file reading writing game saves">
+        <meta name="DESCRIPTION" content="Load and save binary files in SDL 2">
+
+        <title>Lazy Foo' Productions - File Reading and Writing</title>
+
+        <link rel="stylesheet" type="text/css" href="33_file_reading_and_writing_files/lazy.css">
+
+    </head>
+
+    <body>
+
+        <div class="header">
+
+<h1 style="margin-bottom:0px;padding-bottom:0px;border-bottom:0px;">Lazy Foo' Productions</h1>
+<div class="nav">
+<a class="nav" href="http://forums.libsdl.org/">SDL Forums</a>
+<a class="nav" href="http://lazyfoo.net/tutorials/SDL/index.php">SDL Tutorials</a>
+<a class="nav" href="http://lazyfoo.net/articles/index.php">Articles</a>
+<a class="nav" href="http://lazyfoo.net/tutorials/OpenGL/index.php">OpenGL Tutorials</a>
+<a class="nav" href="http://www.opengl.org/discussion_boards/forum.php">OpenGL Forums</a>
+<div class="ads">
+<script id="twitter-wjs" src="33_file_reading_and_writing_files/widgets.js"></script><script id="facebook-jssdk" src="33_file_reading_and_writing_files/sdk.js"></script><script type="text/javascript" async="" src="33_file_reading_and_writing_files/ga.js"></script><script type="text/javascript"><!--
+google_ad_client = "pub-5880704953225255";
+google_ad_width = 468;
+google_ad_height = 60;
+google_ad_format = "468x60_as";
+google_ad_type = "text_image";
+google_ad_channel ="";
+google_color_border = "6699CC";
+google_color_bg = "003366";
+google_color_link = "FFFFFF";
+google_color_url = "AECCEB";
+google_color_text = "AECCEB";
+//--></script>
+<script type="text/javascript" src="33_file_reading_and_writing_files/show_ads.js">
+</script>
+</div><a class="nav" href="http://lazyfoo.net/index.php">News</a>
+<a class="nav" href="http://lazyfoo.net/faq.php">FAQs</a>
+<!--<a class="nav" href="http://lazyfoo.net/games/index.php">Games</a>-->
+<a class="nav" href="http://lazyfoo.net/contact.php">Contact</a>
+<a class="nav" href="http://lazyfoo.net/donate.php">Donations</a>
+
+</div><script type="text/javascript">
+
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-32350292-1']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+
+</script>
+<!--Init facebook-->
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) return;
+  js = d.createElement(s); js.id = id;
+  js.src = "//connect.facebook.net/en_US/sdk.js#xfbml=1&version=v2.0";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+
+<!--Init twitter-->
+<script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src="https://platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs");</script>
+
+<!--Init google+-->
+<script src="33_file_reading_and_writing_files/plusone.js"></script>
+</div>        
+        <div class="content">
+
+            <div class="tutPreface"><h1 class="tutHead">File Reading and Writing</h1>
+            <div class="tutImg"><img src="33_file_reading_and_writing_files/preview.png"></div>
+            <h6>Last Updated 4/20/14</h6>
+            Being able to save and load data is needed to keep data 
+between play sessions. SDL_RWops file handling allows us to do cross 
+platform file IO to save data.
+            </div>
+
+
+<div class="tutCode">//Data points
+Sint32 gData[ TOTAL_DATA ];
+</div>
+
+<div class="tutText">
+Here we're declaring an array of <b>S</b>igned <b>int</b>egers that are <b>32</b> bits long. This will be the data we will be loading and saving. For this demo this array will be
+of length 10.
+</div>
+
+
+<div class="tutCode">    //Open file for reading in binary
+    SDL_RWops* file = SDL_RWFromFile( "33_file_reading_and_writing/nums.bin", "r+b" );
+</div>
+
+<div class="tutText">
+In our media loading function we're opening the save file for reading using <a class="tutLink" href="http://wiki.libsdl.org/SDL_RWFromFile">SDL_RWFromFile</a>.
+ The first argument
+is the path to the file and the second argument defines how we will be 
+opening it. "r+b" means it is being opened for reading in binary.
+</div>
+
+    
+<div class="tutCode">    //File does not exist
+    if( file == NULL )
+    {
+        printf( "Warning: Unable to open file! SDL Error: %s\n", SDL_GetError() );
+        
+        //Create file for writing
+        file = SDL_RWFromFile( "33_file_reading_and_writing/nums.bin", "w+b" );
+</div>
+
+<div class="tutText">
+Now if the file does not exist that doesn't exactly mean an error. It 
+could mean this is the first time the program has run and the file has 
+not been created yet. If the file does
+not exist we prompt a warning and create a file by opening a file with 
+"w+b". This will open a new file for writing in binary.
+</div>
+
+<div class="tutCode">        if( file != NULL )
+        {
+            printf( "New file created!\n" );
+
+            //Initialize data
+            for( int i = 0; i &lt; TOTAL_DATA; ++i )
+            {
+                gData[ i ] = 0;    
+                SDL_RWwrite( file, &amp;gData[ i ], sizeof(Sint32), 1 );
+            }
+            
+            //Close file handler
+            SDL_RWclose( file );
+        }
+        else
+        {
+            printf( "Error: Unable to create file! SDL Error: %s\n", SDL_GetError() );
+            success = false;
+        }
+    }
+</div>
+
+<div class="tutText">
+If a new file was created successfully we then start writing the initialized data to it using <a class="tutLink" href="http://wiki.libsdl.org/SDL_RWwrite">SDL_RWwrite</a>.
+ The first
+argument is the file we're writing to, the second argument is the 
+address of the objects in memory we're writing, the third argument is 
+the number of bytes per object we're writing,
+and the last one is the number of objects we're writing. After we're 
+done writing out all the objects, we close the file for writing using 
+<a class="tutLink" href="http://wiki.libsdl.org/SDL_RWclose">SDL_RWclose</a>.<br>
+<br>
+If the file was never created in the first place, we report an error to the console and set the success flag to false.
+</div>
+
+
+<div class="tutCode">    //File exists
+    else
+    {
+        //Load data
+        printf( "Reading file...!\n" );
+        for( int i = 0; i &lt; TOTAL_DATA; ++i )
+        {
+            SDL_RWread( file, &amp;gData[ i ], sizeof(Sint32), 1 );
+        }
+
+        //Close file handler
+        SDL_RWclose( file );
+    }
+</div>
+
+<div class="tutText">
+Now if our file loaded successfully on the first try, all we have to do is reading in the data using <a class="tutLink" href="http://wiki.libsdl.org/SDL_RWread">SDL_RWread</a>,
+which basically functions like SDL_RWwrite but in reverse.
+</div>
+
+
+<div class="tutCode">    //Initialize data textures
+    gDataTextures[ 0 ].loadFromRenderedText( std::to_string( (_Longlong)gData[ 0 ] ), highlightColor );
+    for( int i = 1; i &lt; TOTAL_DATA; ++i )
+    {
+        gDataTextures[ i ].loadFromRenderedText( std::to_string( (_Longlong)gData[ i ] ), textColor );
+    }
+</div>
+
+<div class="tutText">
+After the file is loaded we render the text textures that correspond with each of our data numbers. Our
+<a class="tutLink" href="http://lazyfoo.net/tutorials/SDL/16_true_type_fonts/index.php">loadFromRenderedText</a> function only accepts strings so we have to convert the integers to strings.
+</div>
+
+
+    
+<div class="tutCode">void close()
+{
+    //Open data for writing
+    SDL_RWops* file = SDL_RWFromFile( "33_file_reading_and_writing/nums.bin", "w+b" );
+    if( file != NULL )
+    {
+        //Save data
+        for( int i = 0; i &lt; TOTAL_DATA; ++i )
+        {
+            SDL_RWwrite( file, &amp;gData[ i ], sizeof(Sint32), 1 );
+        }
+
+        //Close file handler
+        SDL_RWclose( file );
+    }
+    else
+    {
+        printf( "Error: Unable to save file! %s\n", SDL_GetError() );
+    }
+</div>
+
+<div class="tutText">
+When we close the program, we open up the file again for writing and write out all the data.
+</div>
+
+
+<div class="tutCode">            //Main loop flag
+            bool quit = false;
+
+            //Event handler
+            SDL_Event e;
+
+            //Text rendering color
+            SDL_Color textColor = { 0, 0, 0, 0xFF };
+            SDL_Color highlightColor = { 0xFF, 0, 0, 0xFF };
+
+            //Current input point
+            int currentData = 0;
+</div>
+
+<div class="tutText">
+Before we go into the main loop we declare currentData to keep track of 
+which of our data integers we're altering. We also declare a plain text 
+color and a highlight color for
+rendering text.
+</div>
+
+
+<div class="tutCode">                    else if( e.type == SDL_KEYDOWN )
+                    {
+                        switch( e.key.keysym.sym )
+                        {
+                            //Previous data entry
+                            case SDLK_UP:
+                            //Rerender previous entry input point
+                            gDataTextures[ currentData ].loadFromRenderedText( std::to_string( (_Longlong)gData[ currentData ] ), textColor );
+                            --currentData;
+                            if( currentData &lt; 0 )
+                            {
+                                currentData = TOTAL_DATA - 1;
+                            }
+                            
+                            //Rerender current entry input point
+                            gDataTextures[ currentData ].loadFromRenderedText( std::to_string( (_Longlong)gData[ currentData ] ), highlightColor );
+                            break;
+                            
+                            //Next data entry
+                            case SDLK_DOWN:
+                            //Rerender previous entry input point
+                            gDataTextures[ currentData ].loadFromRenderedText( std::to_string( (_Longlong)gData[ currentData ] ), textColor );
+                            ++currentData;
+                            if( currentData == TOTAL_DATA )
+                            {
+                                currentData = 0;
+                            }
+                            
+                            //Rerender current entry input point
+                            gDataTextures[ currentData ].loadFromRenderedText( std::to_string( (_Longlong)gData[ currentData ] ), highlightColor );
+                            break;
+</div>
+
+<div class="tutText">
+When we press up or down we want to rerender the the old current data in
+ plain color, move to the next data point (with some bounds checking), 
+and rerender the new current data
+in the highlight color.
+</div>
+
+                    
+<div class="tutCode">                            //Decrement input point
+                            case SDLK_LEFT:
+                            --gData[ currentData ];
+                            gDataTextures[ currentData ].loadFromRenderedText( std::to_string( (_Longlong)gData[ currentData ] ), highlightColor );
+                            break;
+                            
+                            //Increment input point
+                            case SDLK_RIGHT:
+                            ++gData[ currentData ];
+                            gDataTextures[ currentData ].loadFromRenderedText( std::to_string( (_Longlong)gData[ currentData ] ), highlightColor );
+                            break;
+                        }
+                    }
+</div>
+
+<div class="tutText">
+When we press left or right we decrement or increment the current data and rerender the texture associated with it.
+</div>
+
+
+<div class="tutCode">                //Clear screen
+                SDL_SetRenderDrawColor( gRenderer, 0xFF, 0xFF, 0xFF, 0xFF );
+                SDL_RenderClear( gRenderer );
+
+                //Render text textures
+                gPromptTextTexture.render( ( SCREEN_WIDTH - gPromptTextTexture.getWidth() ) / 2, 0 );
+                for( int i = 0; i &lt; TOTAL_DATA; ++i )
+                {
+                    gDataTextures[ i ].render( ( SCREEN_WIDTH - gDataTextures[ i ].getWidth() ) / 2, gPromptTextTexture.getHeight() + gDataTextures[ 0 ].getHeight() * i );
+                }
+
+                //Update screen
+                SDL_RenderPresent( gRenderer );
+</div>
+
+<div class="tutText">
+At the end of the main loop we render all the textures to the screen.
+</div>
+
+            <div class="tutFooter">
+            Download the media and source code for this tutorial <a class="tutLink" href="http://lazyfoo.net/tutorials/SDL/33_file_reading_and_writing/33_file_reading_and_writing.zip">here</a>.<br>
+            <br>
+            <a class="leftNav" href="http://lazyfoo.net/tutorials/SDL/index.php#File%20Reading%20and%20Writing">Back to SDL Tutorials</a><br>
+            </div>
+
+        </div>
+
+        <div class="footer">
+
+<div style="text-align: center;">
+<!--Facebook-->
+<span style="line-height: 10px;" class="fb-share-button" data-href="http://lazyfoo.net/" data-type="button_count"></span>
+
+<!--Google+-->
+<g:plus action="share" annotation="bubble" height="20" href="http://lazyfoo.net/"></g:plus>
+
+<!--Twitter-->
+<a style="line-height: 0px;" href="https://twitter.com/share" class="twitter-share-button" data-lang="en">Tweet</a>
+
+</div>
+<div class="nav">
+<a class="nav" href="http://forums.libsdl.org/">SDL Forums</a>
+<a class="nav" href="http://lazyfoo.net/tutorials/SDL/index.php">SDL Tutorials</a>
+<a class="nav" href="http://lazyfoo.net/articles/index.php">Articles</a>
+<a class="nav" href="http://lazyfoo.net/tutorials/OpenGL/index.php">OpenGL Tutorials</a>
+<a class="nav" href="http://www.opengl.org/discussion_boards/forum.php">OpenGL Forums</a>
+<div class="ads">
+<script type="text/javascript"><!--
+google_ad_client = "pub-5880704953225255";
+google_ad_width = 468;
+google_ad_height = 60;
+google_ad_format = "468x60_as";
+google_ad_type = "text_image";
+google_ad_channel ="";
+google_color_border = "6699CC";
+google_color_bg = "003366";
+google_color_link = "FFFFFF";
+google_color_url = "AECCEB";
+google_color_text = "AECCEB";
+//--></script>
+<script type="text/javascript" src="33_file_reading_and_writing_files/show_ads.js">
+</script>
+</div><a class="nav" href="http://lazyfoo.net/index.php">News</a>
+<a class="nav" href="http://lazyfoo.net/faq.php">FAQs</a>
+<!--<a class="nav" href="http://lazyfoo.net/games/index.php">Games</a>-->
+<a class="nav" href="http://lazyfoo.net/contact.php">Contact</a>
+<a class="nav" href="http://lazyfoo.net/donate.php">Donations</a>
+
+</div>
+<h6>
+Copyright Lazy Foo' Productions 2004-2017
+</h6>
+
+</div>
+    
+
+</body></html>

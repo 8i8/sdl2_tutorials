@@ -1,12 +1,20 @@
 /*
- * This program demonstrates the use of true type fonts with SDL using
- * TTF_Init() TTF_OpenFont() and TTF_RenderText_Solid().
+ * True Type Fonts
  *
- * https://www.libsdl.org/projects/SDL_ttf/docs/SDL_ttf_8.html
- * https://www.libsdl.org/projects/SDL_ttf/docs/SDL_ttf_14.html
- * https://www.libsdl.org/projects/SDL_ttf/docs/SDL_ttf_43.html
+ * One way to render text with SDL is with the extension library SDL_ttf.
+ * SDL_ttf allows you to create images from TrueType fonts which we'll use here
+ * to create textures from font text.
  *
- * Note: missing alpha value on line 236.
+ * To use SDL_ttf, you have to set up the SDL_ttf extension library just like
+ * you would set up SDL_image. Like before, it's just a matter of having the
+ * headers files, library files, and binary files in the right place with your
+ * compiler configured to use them.
+ *
+ * Here we're adding another function for the texture called
+ * LTexture_loadFromRenderedText. The way SDL_ttf works is that you create a
+ * new image from a font and color. For our texture class all that means is
+ * that we're going to be loading our image from text rendered by SDL_ttf
+ * instead of a file.
  */
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
@@ -14,8 +22,8 @@
 #include <stdio.h>
 #include <math.h>
 
-const int SCREEN_WIDTH = 640;
-const int SCREEN_HEIGHT = 480;
+#define SCREEN_WIDTH	640
+#define SCREEN_HEIGHT	480
 
 typedef struct {
 	SDL_Texture *mTexture;
@@ -25,6 +33,12 @@ typedef struct {
 
 SDL_Window* gWindow = NULL;
 SDL_Renderer* gRenderer = NULL;
+
+/*
+ * For this and future tutorials, we'll be using a global font for our text
+ * rendering. In SDL_ttf, the data type for fonts is TTF_Font. We also have a
+ * texture which will be generated from the font.
+ */
 TTF_Font *gFont = NULL;
 LTexture gTextTexture;
 
@@ -67,10 +81,13 @@ short init()
 		SDL_Log("%s(), IMG_Init failed.", __func__);
 		return -1;
 	}
-
-	/* Initialise the ttf text */
-	if(TTF_Init() < 0) {
-		SDL_Log("%s(), TTF_Init failed.", __func__);
+/*
+ * Just like SDL_image, we have to initialize it or the font loading and
+ * rendering functions won't work properly. We start up SDL_ttf using TTF_init.
+ * We can check for errors using TTF_GetError().
+ */
+ 	if(TTF_Init() < 0) {
+		SDL_Log("%s(), TTF_Init failed. %s", __func__, TTF_GetError());
 		return -1;
 	}
 
@@ -89,7 +106,29 @@ LTexture *free_texture(LTexture *lt)
 	return lt;
 }
 
-short loadFromRenderedText(LTexture *lt, char *textureText, SDL_Color textColor)
+/*
+ * Here is where we actually create the text texture we're going to render from
+ * the font. This function takes in the string of text we want to render and
+ * the color we want to use to render it. After that, this function pretty much
+ * works like loading from a file does, only this time we're using a
+ * SDL_Surface created by SDL_ttf instead of a file.
+ *
+ * After freeing any preexisting textures, we load a surface using
+ * TTF_RenderText_Solid. This creates a solid color surface from the font,
+ * text, and color given. If the surface was created successfully, we create a
+ * texture out of it just like we did before when loading a surface from a
+ * file. After the text texture is created, we can render with it just like any
+ * other texture.
+ *
+ * There are other ways to render text that are smoother or blended. Experiment
+ * with the different types of rendering outlined in the SDL_ttf documentation. 
+ *
+ * https://www.libsdl.org/projects/docs/SDL_ttf/SDL_ttf_35.html
+ */
+short LTexture_loadFromRenderedText(
+					LTexture *lt,
+					char *textureText, 
+					SDL_Color textColor)
 {
 	free_texture(lt);
 
@@ -141,9 +180,17 @@ int LTexture_getHeight(LTexture *lt)
 	return lt->mHeight;
 }
 
-short loadMedia()
+/*
+ * In our loading function, we load our font using TTF_OpenFont. This takes in
+ * the path to the font file and the point size we want to render at.
+ *
+ * If the font loaded successfully, we want to load a text texture using our
+ * loading method. As a general rule, you want to minimize the number of time
+ * you render text. Only rerender it when you need to and since we're using the
+ * same text surface for this whole program, we only want to render once.
+ */
+n our clean up function, we want to free the font using TTF_CloseFont. We also want to quit the SDL_ttf library with TTF_Quit to complete the clean up.short loadMedia()
 {
-	/* Open the font after ttf has been initialised */
 	gFont = TTF_OpenFont("DejaVuSerif.ttf", 28);
 	if(gFont == NULL) {
 		SDL_Log("%s(), TTF_OpenFont failed.", __func__);
@@ -151,7 +198,7 @@ short loadMedia()
 	}
 
 	SDL_Color textColor = {0, 0, 0, 0};
-	if(loadFromRenderedText(
+	if(LTexture_loadFromRenderedText(
 				&gTextTexture,
 				"The quick brown fox jumps over the lazy dog",
 				textColor))
@@ -160,6 +207,11 @@ short loadMedia()
 	return 0;
 }
 
+/*
+ * In our clean up function, we want to free the font using TTF_CloseFont. We
+ * also want to quit the SDL_ttf library with TTF_Quit to complete the clean
+ * up.
+ */
 void close_all()
 {
 	free_texture(&gTextTexture);
@@ -195,7 +247,10 @@ int main(int argc, char* args[])
 
 		SDL_SetRenderDrawColor(gRenderer, 0xFF, 0xFF, 0xFF, 0xFF);
 		SDL_RenderClear(gRenderer);
-
+/*
+ * As you can see, after we render the text texture we can render it just like
+ * any other texture.
+ */
 		LTexture_render(
 				&gTextTexture,
 				(SCREEN_WIDTH - LTexture_getWidth(

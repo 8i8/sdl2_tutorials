@@ -1,0 +1,334 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+<html><head>
+
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+        <meta name="KEYWORDS" content="C++ SDL 2 Tutorial 2D Windows Linux Mac texture streaming">
+        <meta name="DESCRIPTION" content="Stream to textures in SDL 2">
+
+        <title>Lazy Foo' Productions - Texture Streaming</title>
+
+        <link rel="stylesheet" type="text/css" href="42_texture_streaming_files/lazy.css">
+
+    </head>
+
+    <body>
+
+        <div class="header">
+
+<h1 style="margin-bottom:0px;padding-bottom:0px;border-bottom:0px;">Lazy Foo' Productions</h1>
+<div class="nav">
+<a class="nav" href="http://forums.libsdl.org/">SDL Forums</a>
+<a class="nav" href="http://lazyfoo.net/tutorials/SDL/index.php">SDL Tutorials</a>
+<a class="nav" href="http://lazyfoo.net/articles/index.php">Articles</a>
+<a class="nav" href="http://lazyfoo.net/tutorials/OpenGL/index.php">OpenGL Tutorials</a>
+<a class="nav" href="http://www.opengl.org/discussion_boards/forum.php">OpenGL Forums</a>
+<div class="ads">
+<script id="twitter-wjs" src="42_texture_streaming_files/widgets.js"></script><script id="facebook-jssdk" src="42_texture_streaming_files/sdk.js"></script><script type="text/javascript" async="" src="42_texture_streaming_files/ga.js"></script><script type="text/javascript"><!--
+google_ad_client = "pub-5880704953225255";
+google_ad_width = 468;
+google_ad_height = 60;
+google_ad_format = "468x60_as";
+google_ad_type = "text_image";
+google_ad_channel ="";
+google_color_border = "6699CC";
+google_color_bg = "003366";
+google_color_link = "FFFFFF";
+google_color_url = "AECCEB";
+google_color_text = "AECCEB";
+//--></script>
+<script type="text/javascript" src="42_texture_streaming_files/show_ads.js">
+</script>
+</div><a class="nav" href="http://lazyfoo.net/index.php">News</a>
+<a class="nav" href="http://lazyfoo.net/faq.php">FAQs</a>
+<!--<a class="nav" href="http://lazyfoo.net/games/index.php">Games</a>-->
+<a class="nav" href="http://lazyfoo.net/contact.php">Contact</a>
+<a class="nav" href="http://lazyfoo.net/donate.php">Donations</a>
+
+</div><script type="text/javascript">
+
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-32350292-1']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+
+</script>
+<!--Init facebook-->
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) return;
+  js = d.createElement(s); js.id = id;
+  js.src = "//connect.facebook.net/en_US/sdk.js#xfbml=1&version=v2.0";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+
+<!--Init twitter-->
+<script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src="https://platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs");</script>
+
+<!--Init google+-->
+<script src="42_texture_streaming_files/plusone.js"></script>
+</div>        
+        <div class="content">
+
+            <div class="tutPreface"><h1 class="tutHead">Texture Streaming</h1>
+            <div class="tutImg"><img src="42_texture_streaming_files/preview.png"></div>
+            <h6>Last Updated 5/25/14</h6>
+            Sometime we want to render pixel data from a source other 
+than a bitmap like a web cam. Using texture stream we can render pixels 
+from any source.
+            </div>
+
+
+<div class="tutCode">//Texture wrapper class
+class LTexture
+{
+    public:
+        //Initializes variables
+        LTexture();
+
+        //Deallocates memory
+        ~LTexture();
+
+        //Loads image at specified path
+        bool loadFromFile( std::string path );
+        
+        #ifdef _SDL_TTF_H
+        //Creates image from font string
+        bool loadFromRenderedText( std::string textureText, SDL_Color textColor );
+        #endif
+
+        //Creates blank texture
+        bool createBlank( int width, int height );
+
+        //Deallocates texture
+        void free();
+
+        //Set color modulation
+        void setColor( Uint8 red, Uint8 green, Uint8 blue );
+
+        //Set blending
+        void setBlendMode( SDL_BlendMode blending );
+
+        //Set alpha modulation
+        void setAlpha( Uint8 alpha );
+        
+        //Renders texture at given point
+        void render( int x, int y, SDL_Rect* clip = NULL, double angle = 0.0, SDL_Point* center = NULL, SDL_RendererFlip flip = SDL_FLIP_NONE );
+
+        //Gets image dimensions
+        int getWidth();
+        int getHeight();
+
+        //Pixel manipulators
+        bool lockTexture();
+        bool unlockTexture();
+        void* getPixels();
+        void copyPixels( void* pixels );
+        int getPitch();
+        Uint32 getPixel32( unsigned int x, unsigned int y );
+
+    private:
+        //The actual hardware texture
+        SDL_Texture* mTexture;
+        void* mPixels;
+        int mPitch;
+
+        //Image dimensions
+        int mWidth;
+        int mHeight;
+};
+</div>
+
+<div class="tutText">
+Here we're add more functionality to our texture class. The createBlank 
+function allocates a blank texture that we can copy data to when 
+streaming. The copyPixels function copies in
+the pixel data we want to stream.
+</div>
+
+
+<div class="tutCode">//A test animation stream
+class DataStream
+{
+    public:
+        //Initializes internals
+        DataStream();
+
+        //Loads initial data
+        bool loadMedia();
+
+        //Deallocator
+        void free();
+
+        //Gets current frame data
+        void* getBuffer();
+
+    private:
+        //Internal data
+        SDL_Surface* mImages[ 4 ];
+        int mCurrentImage;
+        int mDelayFrames;
+};
+</div>
+
+<div class="tutText">
+Here is our data stream class. We won't go deep into how it works 
+because we don't really care. When dealing with web cam, video decoding,
+ etc APIs they typically don't go deep into
+how they work because all we care about is getting the video and audio 
+data from them.<br>
+<br>
+All we really care about is that getBuffer function which gets the current pixels from the data buffer.
+</div>
+
+
+<div class="tutCode">bool LTexture::createBlank( int width, int height )
+{
+    //Create uninitialized texture
+    mTexture = SDL_CreateTexture( gRenderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_STREAMING, width, height );
+    if( mTexture == NULL )
+    {
+        printf( "Unable to create blank texture! SDL Error: %s\n", SDL_GetError() );
+    }
+    else
+    {
+        mWidth = width;
+        mHeight = height;
+    }
+
+    return mTexture != NULL;
+}
+</div>
+
+<div class="tutText">
+As you can see, all this function does is create a 32bit RGBA texture 
+with stream access. One thing you have to make sure of when creating 
+your texture is that the format of the
+texture pixels matches the format of the pixels we're streaming.  
+</div>
+
+
+<div class="tutCode">void LTexture::copyPixels( void* pixels )
+{
+    //Texture is locked
+    if( mPixels != NULL )
+    {
+        //Copy to locked pixels
+        memcpy( mPixels, pixels, mPitch * mHeight );
+    }
+}
+</div>
+
+<div class="tutText">
+Here is our function to copy in the pixels from the stream. The function
+ assumes the texture is locked and that the pixels are from an image the
+ same size as the texture.
+</div>
+
+
+<div class="tutCode">            //While application is running
+            while( !quit )
+            {
+                //Handle events on queue
+                while( SDL_PollEvent( &amp;e ) != 0 )
+                {
+                    //User requests quit
+                    if( e.type == SDL_QUIT )
+                    {
+                        quit = true;
+                    }
+                }
+
+                //Clear screen
+                SDL_SetRenderDrawColor( gRenderer, 0xFF, 0xFF, 0xFF, 0xFF );
+                SDL_RenderClear( gRenderer );
+
+                //Copy frame from buffer
+                gStreamingTexture.lockTexture();
+                gStreamingTexture.copyPixels( gDataStream.getBuffer() );
+                gStreamingTexture.unlockTexture();
+
+                //Render frame
+                gStreamingTexture.render( ( SCREEN_WIDTH - gStreamingTexture.getWidth() ) / 2, ( SCREEN_HEIGHT - gStreamingTexture.getHeight() ) / 2 );
+
+                //Update screen
+                SDL_RenderPresent( gRenderer );
+            }
+</div>
+
+<div class="tutText">
+In the main loop rendering we lock our stream texture, copy the pixels 
+from the stream and then unlock the texture. With our texture holding 
+the latest image from the stream, we
+render the image to the screen.<br>
+<br>
+When dealing with decoding APIs things may get trickier where we have to
+ convert from one format to another but ultimately all we need is a 
+means to get the pixel data and copy it 
+to the screen.
+</div>
+
+
+            <div class="tutFooter">
+            Download the media and source code for this tutorial <a class="tutLink" href="http://lazyfoo.net/tutorials/SDL/42_texture_streaming/42_texture_streaming.zip">here</a>.<br>
+            <br>
+            <a class="leftNav" href="http://lazyfoo.net/tutorials/SDL/index.php#Texture%20Streaming">Back to SDL Tutorials</a><br>
+            </div>
+
+        </div>
+
+        <div class="footer">
+
+<div style="text-align: center;">
+<!--Facebook-->
+<span style="line-height: 10px;" class="fb-share-button" data-href="http://lazyfoo.net/" data-type="button_count"></span>
+
+<!--Google+-->
+<g:plus action="share" annotation="bubble" height="20" href="http://lazyfoo.net/"></g:plus>
+
+<!--Twitter-->
+<a style="line-height: 0px;" href="https://twitter.com/share" class="twitter-share-button" data-lang="en">Tweet</a>
+
+</div>
+<div class="nav">
+<a class="nav" href="http://forums.libsdl.org/">SDL Forums</a>
+<a class="nav" href="http://lazyfoo.net/tutorials/SDL/index.php">SDL Tutorials</a>
+<a class="nav" href="http://lazyfoo.net/articles/index.php">Articles</a>
+<a class="nav" href="http://lazyfoo.net/tutorials/OpenGL/index.php">OpenGL Tutorials</a>
+<a class="nav" href="http://www.opengl.org/discussion_boards/forum.php">OpenGL Forums</a>
+<div class="ads">
+<script type="text/javascript"><!--
+google_ad_client = "pub-5880704953225255";
+google_ad_width = 468;
+google_ad_height = 60;
+google_ad_format = "468x60_as";
+google_ad_type = "text_image";
+google_ad_channel ="";
+google_color_border = "6699CC";
+google_color_bg = "003366";
+google_color_link = "FFFFFF";
+google_color_url = "AECCEB";
+google_color_text = "AECCEB";
+//--></script>
+<script type="text/javascript" src="42_texture_streaming_files/show_ads.js">
+</script>
+</div><a class="nav" href="http://lazyfoo.net/index.php">News</a>
+<a class="nav" href="http://lazyfoo.net/faq.php">FAQs</a>
+<!--<a class="nav" href="http://lazyfoo.net/games/index.php">Games</a>-->
+<a class="nav" href="http://lazyfoo.net/contact.php">Contact</a>
+<a class="nav" href="http://lazyfoo.net/donate.php">Donations</a>
+
+</div>
+<h6>
+Copyright Lazy Foo' Productions 2004-2017
+</h6>
+
+</div>
+    
+
+</body></html>

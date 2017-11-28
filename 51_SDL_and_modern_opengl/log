@@ -1,6 +1,0 @@
-apitrace: loaded into /home/iain/projects/sdl/sdl2/lazyfoo/51_SDL_and_modern_opengl/p51_SDL_and_modern_opengl
-apitrace: redirecting dlopen("libGL.so.1", 0x102) from /usr/lib/x86_64-linux-gnu/libSDL2-2.0.so.0
-apitrace: tracing to /home/iain/projects/sdl/sdl2/lazyfoo/51_SDL_and_modern_opengl/p51_SDL_and_modern_opengl.3.trace
-apitrace: ignoring dlopen("libGL.so.1", 0x102) from /usr/lib/x86_64-linux-gnu/mesa/libGL.so.1
-apitrace: redirecting dlopen("libGL.so.1", 0x102) from /usr/lib/x86_64-linux-gnu/libSDL2-2.0.so.0
-apitrace: unloaded from /home/iain/projects/sdl/sdl2/lazyfoo/51_SDL_and_modern_opengl/p51_SDL_and_modern_opengl

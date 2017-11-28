@@ -1,0 +1,524 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+<html><head>
+
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+        <meta name="KEYWORDS" content="C++ SDL 2 Tutorial 2D Windows Linux Mac window resize minimize maximize events">
+        <meta name="DESCRIPTION" content="Handle resizable windows in SDL 2">
+
+        <title>Lazy Foo' Productions - Window Events</title>
+
+        <link rel="stylesheet" type="text/css" href="35_window_events_files/lazy.css">
+
+    </head>
+
+    <body>
+
+        <div class="header">
+
+<h1 style="margin-bottom:0px;padding-bottom:0px;border-bottom:0px;">Lazy Foo' Productions</h1>
+<div class="nav">
+<a class="nav" href="http://forums.libsdl.org/">SDL Forums</a>
+<a class="nav" href="http://lazyfoo.net/tutorials/SDL/index.php">SDL Tutorials</a>
+<a class="nav" href="http://lazyfoo.net/articles/index.php">Articles</a>
+<a class="nav" href="http://lazyfoo.net/tutorials/OpenGL/index.php">OpenGL Tutorials</a>
+<a class="nav" href="http://www.opengl.org/discussion_boards/forum.php">OpenGL Forums</a>
+<div class="ads">
+<script id="twitter-wjs" src="35_window_events_files/widgets.js"></script><script id="facebook-jssdk" src="35_window_events_files/sdk.js"></script><script type="text/javascript" async="" src="35_window_events_files/ga.js"></script><script type="text/javascript"><!--
+google_ad_client = "pub-5880704953225255";
+google_ad_width = 468;
+google_ad_height = 60;
+google_ad_format = "468x60_as";
+google_ad_type = "text_image";
+google_ad_channel ="";
+google_color_border = "6699CC";
+google_color_bg = "003366";
+google_color_link = "FFFFFF";
+google_color_url = "AECCEB";
+google_color_text = "AECCEB";
+//--></script>
+<script type="text/javascript" src="35_window_events_files/show_ads.js">
+</script>
+</div><a class="nav" href="http://lazyfoo.net/index.php">News</a>
+<a class="nav" href="http://lazyfoo.net/faq.php">FAQs</a>
+<!--<a class="nav" href="http://lazyfoo.net/games/index.php">Games</a>-->
+<a class="nav" href="http://lazyfoo.net/contact.php">Contact</a>
+<a class="nav" href="http://lazyfoo.net/donate.php">Donations</a>
+
+</div><script type="text/javascript">
+
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-32350292-1']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+
+</script>
+<!--Init facebook-->
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) return;
+  js = d.createElement(s); js.id = id;
+  js.src = "//connect.facebook.net/en_US/sdk.js#xfbml=1&version=v2.0";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+
+<!--Init twitter-->
+<script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src="https://platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs");</script>
+
+<!--Init google+-->
+<script src="35_window_events_files/plusone.js"></script>
+</div>        
+        <div class="content">
+
+            <div class="tutPreface"><h1 class="tutHead">Window Events</h1>
+            <div class="tutImg"><img src="35_window_events_files/preview.png"></div>
+            <h6>Last Updated 4/28/14</h6>
+            SDL also supports resizable windows. When you have resizable
+ windows there are additional events to handle, which is what we'll be 
+doing here.
+            </div>
+
+
+<div class="tutCode">class LWindow
+{
+    public:
+        //Intializes internals
+        LWindow();
+
+        //Creates window
+        bool init();
+
+        //Creates renderer from internal window
+        SDL_Renderer* createRenderer();
+
+        //Handles window events
+        void handleEvent( SDL_Event&amp; e );
+
+        //Deallocates internals
+        void free();
+
+        //Window dimensions
+        int getWidth();
+        int getHeight();
+
+        //Window focii
+        bool hasMouseFocus();
+        bool hasKeyboardFocus();
+        bool isMinimized();
+
+    private:
+        //Window data
+        SDL_Window* mWindow;
+
+        //Window dimensions
+        int mWidth;
+        int mHeight;
+
+        //Window focus
+        bool mMouseFocus;
+        bool mKeyboardFocus;
+        bool mFullScreen;
+        bool mMinimized;
+};
+</div>
+
+<div class="tutText">
+Here is our window class we'll be using as a wrapper for the SDL_Window.
+ It has a constructor, a initializer that creates the window, a function
+ to create renderer from the window,
+an event handler, a deallocator, and some accessor functions to get 
+various attributes from the window.<br>
+<br>
+In terms of data members, we have the window we're wrapping, the 
+dimensions of the window, and flags for the types of focus the windows 
+has. We'll go into more detail further in the
+program.
+</div>
+
+
+<div class="tutCode">//Our custom window
+LWindow gWindow;
+
+//The window renderer
+SDL_Renderer* gRenderer = NULL;
+
+//Scene textures
+LTexture gSceneTexture;
+</div>
+
+<div class="tutText">
+We'll be using our window as a global object.
+</div>
+
+<div class="tutCode">LWindow::LWindow()
+{
+    //Initialize non-existant window
+    mWindow = NULL;
+    mMouseFocus = false;
+    mKeyboardFocus = false;
+    mFullScreen = false;
+    mMinimized = false;
+    mWidth = 0;
+    mHeight = 0;
+}
+</div>
+
+<div class="tutText">
+In the constructor we initialize all our variables.
+</div>
+
+
+<div class="tutCode">bool LWindow::init()
+{
+    //Create window
+    mWindow = SDL_CreateWindow( "SDL Tutorial", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE );
+    if( mWindow != NULL )
+    {
+        mMouseFocus = true;
+        mKeyboardFocus = true;
+        mWidth = SCREEN_WIDTH;
+        mHeight = SCREEN_HEIGHT;
+    }
+
+    return mWindow != NULL;
+}
+</div>
+
+<div class="tutText">
+Our initialization function creates the window with the <a class="tutLink" href="http://wiki.libsdl.org/SDL_WindowFlags">SDL_WINDOW_RESIZABLE</a>
+ flag which allows for our window
+to be resizable. If the function succeeds we set the corresponding flags
+ and dimensions. Then we return whether the window is null or not.
+</div>
+
+
+<div class="tutCode">SDL_Renderer* LWindow::createRenderer()
+{
+    return SDL_CreateRenderer( mWindow, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC );
+}
+</div>
+
+<div class="tutText">
+Here we're handling the creation of a renderer from the member window. 
+We're returning the created renderer because rendering will be handled 
+outside of the class.
+</div>
+
+
+<div class="tutCode">void LWindow::handleEvent( SDL_Event&amp; e )
+{
+    //Window event occured
+    if( e.type == SDL_WINDOWEVENT )
+    {
+        //Caption update flag
+        bool updateCaption = false;
+</div>
+
+<div class="tutText">
+In our window's event handler we'll be looking for events of type <a class="tutLink" href="http://wiki.libsdl.org/SDL_WindowEvent">SDL_WINDOWEVENT</a>.
+ SDL_WindowEvents are actually
+a family of events. Depending on the event we may have to update the 
+caption of the window, so we have a flag that keeps track of that.
+</div>
+
+
+<div class="tutCode">        switch( e.window.event )
+        {
+            //Get new dimensions and repaint on window size change
+            case SDL_WINDOWEVENT_SIZE_CHANGED:
+            mWidth = e.window.data1;
+            mHeight = e.window.data2;
+            SDL_RenderPresent( gRenderer );
+            break;
+
+            //Repaint on exposure
+            case SDL_WINDOWEVENT_EXPOSED:
+            SDL_RenderPresent( gRenderer );
+            break;
+</div>
+
+<div class="tutText">
+When we have a window event we then want to check the <a class="tutLink" href="http://wiki.libsdl.org/SDL_WindowEventID">SDL_WindowEventID</a> to see what type of event it is.
+An SDL_WINDOWEVENT_SIZE_CHANGED is a resize event, so we get the new dimensions and refresh the image on the screen.<br>
+<br>
+An SDL_WINDOWEVENT_EXPOSED just means that window was obscured in some 
+way and now is not obscured so we want to repaint the window.
+</div>
+
+
+<div class="tutCode">            //Mouse entered window
+            case SDL_WINDOWEVENT_ENTER:
+            mMouseFocus = true;
+            updateCaption = true;
+            break;
+            
+            //Mouse left window
+            case SDL_WINDOWEVENT_LEAVE:
+            mMouseFocus = false;
+            updateCaption = true;
+            break;
+
+            //Window has keyboard focus
+            case SDL_WINDOWEVENT_FOCUS_GAINED:
+            mKeyboardFocus = true;
+            updateCaption = true;
+            break;
+
+            //Window lost keyboard focus
+            case SDL_WINDOWEVENT_FOCUS_LOST:
+            mKeyboardFocus = false;
+            updateCaption = true;
+            break;
+</div>
+
+<div class="tutText">
+SDL_WINDOWEVENT_ENTER/SDL_WINDOWEVENT_LEAVE handles when the mouse moves
+ into and out of the window. 
+SDL_WINDOWEVENT_FOCUS_GAINED/SDL_WINDOWEVENT_FOCUS_LOST have to do when 
+the
+window is getting input from the keyboard. Since our caption keeps track
+ of mouse/keyboard focus, we set the update caption flag when any of 
+these events happen.
+</div>
+
+
+<div class="tutCode">            //Window minimized
+            case SDL_WINDOWEVENT_MINIMIZED:
+            mMinimized = true;
+            break;
+
+            //Window maxized
+            case SDL_WINDOWEVENT_MAXIMIZED:
+            mMinimized = false;
+            break;
+            
+            //Window restored
+            case SDL_WINDOWEVENT_RESTORED:
+            mMinimized = false;
+            break;
+        }
+</div>
+
+<div class="tutText">
+Finally here we handle when the window was minimized, maximized, or restored from being minimized.
+</div>
+
+
+<div class="tutCode">        //Update window caption with new data
+        if( updateCaption )
+        {
+            std::stringstream caption;
+            caption &lt;&lt; "SDL Tutorial - MouseFocus:" &lt;&lt; ( ( mMouseFocus ) ? "On" : "Off" ) &lt;&lt; " KeyboardFocus:" &lt;&lt; ( ( mKeyboardFocus ) ? "On" : "Off" );
+            SDL_SetWindowTitle( mWindow, caption.str().c_str() );
+        }
+    }
+</div>
+
+<div class="tutText">
+If the caption needs to be updated, we load a string stream with the updated data and update the caption with
+<a class="tutLink" href="http://wiki.libsdl.org/SDL_SetWindowTitle">SDL_SetWindowTitle</a>.
+</div>
+
+
+
+<div class="tutCode">    //Enter exit full screen on return key
+    else if( e.type == SDL_KEYDOWN &amp;&amp; e.key.keysym.sym == SDLK_RETURN )
+    {
+        if( mFullScreen )
+        {
+            SDL_SetWindowFullscreen( mWindow, SDL_FALSE );
+            mFullScreen = false;
+        }
+        else
+        {
+            SDL_SetWindowFullscreen( mWindow, SDL_TRUE );
+            mFullScreen = true;
+            mMinimized = false;
+        }
+    }
+}
+</div>
+
+<div class="tutText">
+For this demo we'll be toggling fullscreen with the return key. We can set fullscreen mode using
+<a class="tutLink" href="http://wiki.libsdl.org/SDL_SetWindowFullscreen">SDL_SetWindowFullscreen</a>.
+</div>
+
+
+<div class="tutCode">int LWindow::getWidth()
+{
+    return mWidth;
+}
+
+int LWindow::getHeight()
+{
+    return mHeight;
+}
+
+bool LWindow::hasMouseFocus()
+{
+    return mMouseFocus;
+}
+
+bool LWindow::hasKeyboardFocus()
+{
+    return mKeyboardFocus;
+}
+
+bool LWindow::isMinimized()
+{
+    return mMinimized;
+}
+</div>
+
+<div class="tutText">
+Here is a quick rundown of the accessors we use.
+</div>
+
+
+<div class="tutCode">        //Create window
+        if( !gWindow.init() )
+        {
+            printf( "Window could not be created! SDL Error: %s\n", SDL_GetError() );
+            success = false;
+        }
+        else
+        {
+            //Create renderer for window
+            gRenderer = gWindow.createRenderer();
+            if( gRenderer == NULL )
+            {
+                printf( "Renderer could not be created! SDL Error: %s\n", SDL_GetError() );
+                success = false;
+            }
+</div>
+
+<div class="tutText">
+In our initialization function we create our window and renderer only this time with our window wrapper.
+</div>
+        
+
+<div class="tutCode">void close()
+{
+    //Free loaded images
+    gSceneTexture.free();
+
+    //Destroy window    
+    SDL_DestroyRenderer( gRenderer );
+    gWindow.free();
+
+    //Quit SDL subsystems
+    IMG_Quit();
+    SDL_Quit();
+}
+</div>
+
+<div class="tutText">
+In our clean up function we still deallocate our window and renderer.
+</div>
+
+
+<div class="tutCode">            //While application is running
+            while( !quit )
+            {
+                //Handle events on queue
+                while( SDL_PollEvent( &amp;e ) != 0 )
+                {
+                    //User requests quit
+                    if( e.type == SDL_QUIT )
+                    {
+                        quit = true;
+                    }
+
+                    //Handle window events
+                    gWindow.handleEvent( e );
+                }
+
+                //Only draw when not minimized
+                if( !gWindow.isMinimized() )
+                {
+                    //Clear screen
+                    SDL_SetRenderDrawColor( gRenderer, 0xFF, 0xFF, 0xFF, 0xFF );
+                    SDL_RenderClear( gRenderer );
+
+                    //Render text textures
+                    gSceneTexture.render( ( gWindow.getWidth() - gSceneTexture.getWidth() ) / 2, ( gWindow.getHeight() - gSceneTexture.getHeight() ) / 2 );
+
+                    //Update screen
+                    SDL_RenderPresent( gRenderer );
+                }
+            }
+</div>
+
+<div class="tutText">
+In the main loop we make sure to pass events to the window wrapper to 
+handle resize events and in the rendering part of our code we make sure 
+to only render when the window is not
+minimized because this can cause some bugs when we try to render to a 
+minimized window.
+</div>
+
+
+            <div class="tutFooter">
+            Download the media and source code for this tutorial <a class="tutLink" href="http://lazyfoo.net/tutorials/SDL/35_window_events/35_window_events.zip">here</a>.<br>
+            <br>
+            <a class="leftNav" href="http://lazyfoo.net/tutorials/SDL/index.php#Window%20Events">Back to SDL Tutorials</a><br>
+            </div>
+
+        </div>
+
+        <div class="footer">
+
+<div style="text-align: center;">
+<!--Facebook-->
+<span style="line-height: 10px;" class="fb-share-button" data-href="http://lazyfoo.net/" data-type="button_count"></span>
+
+<!--Google+-->
+<g:plus action="share" annotation="bubble" height="20" href="http://lazyfoo.net/"></g:plus>
+
+<!--Twitter-->
+<a style="line-height: 0px;" href="https://twitter.com/share" class="twitter-share-button" data-lang="en">Tweet</a>
+
+</div>
+<div class="nav">
+<a class="nav" href="http://forums.libsdl.org/">SDL Forums</a>
+<a class="nav" href="http://lazyfoo.net/tutorials/SDL/index.php">SDL Tutorials</a>
+<a class="nav" href="http://lazyfoo.net/articles/index.php">Articles</a>
+<a class="nav" href="http://lazyfoo.net/tutorials/OpenGL/index.php">OpenGL Tutorials</a>
+<a class="nav" href="http://www.opengl.org/discussion_boards/forum.php">OpenGL Forums</a>
+<div class="ads">
+<script type="text/javascript"><!--
+google_ad_client = "pub-5880704953225255";
+google_ad_width = 468;
+google_ad_height = 60;
+google_ad_format = "468x60_as";
+google_ad_type = "text_image";
+google_ad_channel ="";
+google_color_border = "6699CC";
+google_color_bg = "003366";
+google_color_link = "FFFFFF";
+google_color_url = "AECCEB";
+google_color_text = "AECCEB";
+//--></script>
+<script type="text/javascript" src="35_window_events_files/show_ads.js">
+</script>
+</div><a class="nav" href="http://lazyfoo.net/index.php">News</a>
+<a class="nav" href="http://lazyfoo.net/faq.php">FAQs</a>
+<!--<a class="nav" href="http://lazyfoo.net/games/index.php">Games</a>-->
+<a class="nav" href="http://lazyfoo.net/contact.php">Contact</a>
+<a class="nav" href="http://lazyfoo.net/donate.php">Donations</a>
+
+</div>
+<h6>
+Copyright Lazy Foo' Productions 2004-2017
+</h6>
+
+</div>
+    
+
+</body></html>

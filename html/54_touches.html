@@ -1,0 +1,235 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+<html><head>
+
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+        <meta name="KEYWORDS" content="C++ SDL 2 Tutorial 2D Windows Linux Mac Android iOS iPhone iPad iPod touch">
+        <meta name="DESCRIPTION" content="Learn how to handle touch input from an Android/iOS device in SDL 2.">
+
+        <title>Lazy Foo' Productions - Touches</title>
+
+        <link rel="stylesheet" type="text/css" href="54_touches_files/lazy.css">
+
+    </head>
+
+    <body>
+
+        <div class="header">
+
+<h1 style="margin-bottom:0px;padding-bottom:0px;border-bottom:0px;">Lazy Foo' Productions</h1>
+<div class="nav">
+<a class="nav" href="http://forums.libsdl.org/">SDL Forums</a>
+<a class="nav" href="http://lazyfoo.net/tutorials/SDL/index.php">SDL Tutorials</a>
+<a class="nav" href="http://lazyfoo.net/articles/index.php">Articles</a>
+<a class="nav" href="http://lazyfoo.net/tutorials/OpenGL/index.php">OpenGL Tutorials</a>
+<a class="nav" href="http://www.opengl.org/discussion_boards/forum.php">OpenGL Forums</a>
+<div class="ads">
+<script id="twitter-wjs" src="54_touches_files/widgets.js"></script><script id="facebook-jssdk" src="54_touches_files/sdk.js"></script><script type="text/javascript" async="" src="54_touches_files/ga.js"></script><script type="text/javascript"><!--
+google_ad_client = "pub-5880704953225255";
+google_ad_width = 468;
+google_ad_height = 60;
+google_ad_format = "468x60_as";
+google_ad_type = "text_image";
+google_ad_channel ="";
+google_color_border = "6699CC";
+google_color_bg = "003366";
+google_color_link = "FFFFFF";
+google_color_url = "AECCEB";
+google_color_text = "AECCEB";
+//--></script>
+<script type="text/javascript" src="54_touches_files/show_ads.js">
+</script>
+</div><a class="nav" href="http://lazyfoo.net/index.php">News</a>
+<a class="nav" href="http://lazyfoo.net/faq.php">FAQs</a>
+<!--<a class="nav" href="http://lazyfoo.net/games/index.php">Games</a>-->
+<a class="nav" href="http://lazyfoo.net/contact.php">Contact</a>
+<a class="nav" href="http://lazyfoo.net/donate.php">Donations</a>
+
+</div><script type="text/javascript">
+
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-32350292-1']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+
+</script>
+<!--Init facebook-->
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) return;
+  js = d.createElement(s); js.id = id;
+  js.src = "//connect.facebook.net/en_US/sdk.js#xfbml=1&version=v2.0";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+
+<!--Init twitter-->
+<script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src="https://platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs");</script>
+
+<!--Init google+-->
+<script src="54_touches_files/plusone.js"></script>
+</div>        
+        <div class="content">
+
+            <div class="tutPreface"><h1 class="tutHead">Touches</h1>
+            <div class="tutImg"><img src="54_touches_files/preview.png"></div>
+            <h6>Last Updated 6/14/15</h6>
+            Now that we know how to load images on mobile, it's time to handle touch input events.
+            </div>
+
+
+<div class="tutCode">//Scene textures
+LTexture gTouchDownTexture;
+LTexture gTouchMotionTexture;
+LTexture gTouchUpTexture;
+</div>
+
+<div class="tutText">
+For this demo we'll a set of textures we'll be using to indicate what type of touch event happens.
+</div>
+
+            
+<div class="tutCode">            //Main loop flag
+            bool quit = false;
+
+            //Event handler
+            SDL_Event e;
+
+            //Touch variables
+            SDL_Point touchLocation = { gScreenRect.w / 2, gScreenRect.h / 2 };
+            LTexture* currentTexture = &amp;gTouchUpTexture;
+</div>
+
+<div class="tutText">
+We'll need to keep track of the touch location and the current touch 
+texture. Here we're setting the default touch location as the center of 
+the screen and the default touch texture to the touch up texture.
+</div>
+
+
+                    
+<div class="tutCode">                    //Touch down
+                    else if( e.type == SDL_FINGERDOWN )
+                    {
+                        touchLocation.x = e.tfinger.x * gScreenRect.w;
+                        touchLocation.y = e.tfinger.y * gScreenRect.h;
+                        currentTexture = &amp;gTouchDownTexture;
+                    }
+                    //Touch motion
+                    else if( e.type == SDL_FINGERMOTION )
+                    {
+                        touchLocation.x = e.tfinger.x * gScreenRect.w;
+                        touchLocation.y = e.tfinger.y * gScreenRect.h;
+                        currentTexture = &amp;gTouchMotionTexture;
+                    }
+                    //Touch release
+                    else if( e.type == SDL_FINGERUP )
+                    {
+                        touchLocation.x = e.tfinger.x * gScreenRect.w;
+                        touchLocation.y = e.tfinger.y * gScreenRect.h;
+                        currentTexture = &amp;gTouchUpTexture;
+                    }
+</div>
+
+<div class="tutText">
+When you interact with a touch display, you generate a <a href="https://wiki.libsdl.org/SDL_TouchFingerEvent" class="tutLink">SDL_TouchFingerEvent</a>. When the touch starts you get a SDL_FINGERDOWN event, when you move around
+your finger a SDL_FINGERMOTION happens, and when you release your touch you get a SDL_FINGERUP.<br>
+<br>
+Touch events function pretty much like mouse events with one major 
+difference: touch coordinates are normalized. This means instead of 
+going from 0 to 640 (or what ever the size of your mobile display), they
+ always go from 0 to
+1. To get the touch coordinates in screen coordinates simply multiply 
+the touch coordinates by the screen resolution. If you look at the code 
+above that's exactly what we're doing here, along with setting the 
+corresponding
+texture for the given touch event.<br>
+<br>
+One thing not covered here is handling multiple fingers. All we do here 
+is handle the most recent touch event. If you want to handle more than 
+one finger, just keep track of them with their touch IDs. The touch IDs 
+aren't
+simple 0, 1, 2, etc but a 64bit integer version of the pointer to the 
+touch data. This quirk has tripped people over before so keep it in 
+mind.
+</div>
+
+
+<div class="tutCode">                //Clear screen
+                SDL_SetRenderDrawColor( gRenderer, 0xFF, 0xFF, 0xFF, 0xFF );
+                SDL_RenderClear( gRenderer );
+
+                //Render touch texture
+                currentTexture-&gt;render( touchLocation.x - currentTexture-&gt;getWidth() / 2, touchLocation.y - currentTexture-&gt;getHeight() / 2 );
+
+                //Update screen
+                SDL_RenderPresent( gRenderer );
+</div>
+
+<div class="tutText">
+As you can see in our rendering, we just render the touch texture at the touch position.
+</div>
+
+
+            <div class="tutFooter">
+            Download the media and source code for this tutorial <a class="tutLink" href="http://lazyfoo.net/tutorials/SDL/54_touches/54_touches.zip">here</a>.<br>
+            <br>
+            <a class="leftNav" href="http://lazyfoo.net/tutorials/SDL/index.php#Touches">Back to SDL Tutorials</a><br>
+            </div>
+
+        </div>
+
+        <div class="footer">
+
+<div style="text-align: center;">
+<!--Facebook-->
+<span style="line-height: 10px;" class="fb-share-button" data-href="http://lazyfoo.net/" data-type="button_count"></span>
+
+<!--Google+-->
+<g:plus action="share" annotation="bubble" height="20" href="http://lazyfoo.net/"></g:plus>
+
+<!--Twitter-->
+<a style="line-height: 0px;" href="https://twitter.com/share" class="twitter-share-button" data-lang="en">Tweet</a>
+
+</div>
+<div class="nav">
+<a class="nav" href="http://forums.libsdl.org/">SDL Forums</a>
+<a class="nav" href="http://lazyfoo.net/tutorials/SDL/index.php">SDL Tutorials</a>
+<a class="nav" href="http://lazyfoo.net/articles/index.php">Articles</a>
+<a class="nav" href="http://lazyfoo.net/tutorials/OpenGL/index.php">OpenGL Tutorials</a>
+<a class="nav" href="http://www.opengl.org/discussion_boards/forum.php">OpenGL Forums</a>
+<div class="ads">
+<script type="text/javascript"><!--
+google_ad_client = "pub-5880704953225255";
+google_ad_width = 468;
+google_ad_height = 60;
+google_ad_format = "468x60_as";
+google_ad_type = "text_image";
+google_ad_channel ="";
+google_color_border = "6699CC";
+google_color_bg = "003366";
+google_color_link = "FFFFFF";
+google_color_url = "AECCEB";
+google_color_text = "AECCEB";
+//--></script>
+<script type="text/javascript" src="54_touches_files/show_ads.js">
+</script>
+</div><a class="nav" href="http://lazyfoo.net/index.php">News</a>
+<a class="nav" href="http://lazyfoo.net/faq.php">FAQs</a>
+<!--<a class="nav" href="http://lazyfoo.net/games/index.php">Games</a>-->
+<a class="nav" href="http://lazyfoo.net/contact.php">Contact</a>
+<a class="nav" href="http://lazyfoo.net/donate.php">Donations</a>
+
+</div>
+<h6>
+Copyright Lazy Foo' Productions 2004-2017
+</h6>
+
+</div>
+    
+
+</body></html>

@@ -1,0 +1,315 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+<html><head>
+
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+        <meta name="KEYWORDS" content="C++ SDL 2 Tutorial 2D Windows Linux Mac texture coloring modulation">
+        <meta name="DESCRIPTION" content="Change your texture's color using color modulation">
+
+        <title>Lazy Foo' Productions - Color Modulation</title>
+
+        <link rel="stylesheet" type="text/css" href="12_color_modulation_files/lazy.css">
+
+    </head>
+
+    <body>
+
+        <div class="header">
+
+<h1 style="margin-bottom:0px;padding-bottom:0px;border-bottom:0px;">Lazy Foo' Productions</h1>
+<div class="nav">
+<a class="nav" href="http://forums.libsdl.org/">SDL Forums</a>
+<a class="nav" href="http://lazyfoo.net/tutorials/SDL/index.php">SDL Tutorials</a>
+<a class="nav" href="http://lazyfoo.net/articles/index.php">Articles</a>
+<a class="nav" href="http://lazyfoo.net/tutorials/OpenGL/index.php">OpenGL Tutorials</a>
+<a class="nav" href="http://www.opengl.org/discussion_boards/forum.php">OpenGL Forums</a>
+<div class="ads">
+<script id="twitter-wjs" src="12_color_modulation_files/widgets.js"></script><script id="facebook-jssdk" src="12_color_modulation_files/sdk.js"></script><script type="text/javascript" async="" src="12_color_modulation_files/ga.js"></script><script type="text/javascript"><!--
+google_ad_client = "pub-5880704953225255";
+google_ad_width = 468;
+google_ad_height = 60;
+google_ad_format = "468x60_as";
+google_ad_type = "text_image";
+google_ad_channel ="";
+google_color_border = "6699CC";
+google_color_bg = "003366";
+google_color_link = "FFFFFF";
+google_color_url = "AECCEB";
+google_color_text = "AECCEB";
+//--></script>
+<script type="text/javascript" src="12_color_modulation_files/show_ads.js">
+</script>
+</div><a class="nav" href="http://lazyfoo.net/index.php">News</a>
+<a class="nav" href="http://lazyfoo.net/faq.php">FAQs</a>
+<!--<a class="nav" href="http://lazyfoo.net/games/index.php">Games</a>-->
+<a class="nav" href="http://lazyfoo.net/contact.php">Contact</a>
+<a class="nav" href="http://lazyfoo.net/donate.php">Donations</a>
+
+</div><script type="text/javascript">
+
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-32350292-1']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+
+</script>
+<!--Init facebook-->
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) return;
+  js = d.createElement(s); js.id = id;
+  js.src = "//connect.facebook.net/en_US/sdk.js#xfbml=1&version=v2.0";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+
+<!--Init twitter-->
+<script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src="https://platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs");</script>
+
+<!--Init google+-->
+<script src="12_color_modulation_files/plusone.js"></script>
+</div>        
+        <div class="content">
+
+            <div class="tutPreface"><h1 class="tutHead">Color Modulation</h1>
+            <div class="tutImg"><img src="12_color_modulation_files/preview.png"></div>
+            <h6>Last Updated 1/19/14</h6>
+            Color modulation allows you to alter the color of your 
+rendered textures. Here we're going to modulate a texture using various 
+colors.
+            </div>
+
+<div class="tutCode">//Texture wrapper class
+class LTexture
+{
+    public:
+        //Initializes variables
+        LTexture();
+
+        //Deallocates memory
+        ~LTexture();
+
+        //Loads image at specified path
+        bool loadFromFile( std::string path );
+
+        //Deallocates texture
+        void free();
+
+        //Set color modulation
+        void setColor( Uint8 red, Uint8 green, Uint8 blue );
+
+        //Renders texture at given point
+        void render( int x, int y, SDL_Rect* clip = NULL );
+
+        //Gets image dimensions
+        int getWidth();
+        int getHeight();
+
+    private:
+        //The actual hardware texture
+        SDL_Texture* mTexture;
+
+        //Image dimensions
+        int mWidth;
+        int mHeight;
+};
+</div>
+
+<div class="tutText">
+We're adding a function to the texture wrapper class that will allow the
+ texture modulation to be set. All it does is take in a red, green, and 
+blue color components.
+</div>
+
+
+<div class="tutCode">void LTexture::setColor( Uint8 red, Uint8 green, Uint8 blue )
+{
+    //Modulate texture
+    SDL_SetTextureColorMod( mTexture, red, green, blue );
+}
+</div>
+
+<div class="tutText">
+And setting texture modulation is as easy as making a call to <a class="tutLink" href="http://wiki.libsdl.org/SDL_SetTextureColorMod">SDL_SetTextureColorMod</a>. You just pass in
+the texture you want to modulate and the color you want to modulate with.<br>
+<br>
+Now how does color modulation work? Let's say you have this texture:<br>
+<div class="tutImg"><img src="12_color_modulation_files/full.png"></div><br>
+<br>
+And you modulate it with red 255, green 128, and blue 255. You'll end up with this:<br>
+<br>
+<div class="tutImg"><img src="12_color_modulation_files/half_green.png"></div><br>
+<br>
+You may have noticed that SDL_SetTextureColorMod accepts Uint8 as arguments for the color components. An <b>U</b>int<b>8</b> is just an integer that is <b>U</b>nsigned and
+<b>8</b>bit. This means it goes from 0 to 255. 128 is about halfway 
+between 0 and 255, so when you modulate green to 128 it halves the green
+ component for any pixel on the texture.<br>
+<br>
+The red and blue squares don't get affected because they have no green 
+in them, but the green becomes half as bright and the white turns a 
+light magenta (magenta is red 255, green 0,
+blue 255). Color modulation is just a way to multiply a color throughout
+ the whole texture.
+</div>
+
+
+<div class="tutCode">            //Main loop flag
+            bool quit = false;
+
+            //Event handler
+            SDL_Event e;
+
+            //Modulation components
+            Uint8 r = 255;
+            Uint8 g = 255;
+            Uint8 b = 255;
+</div>
+
+<div class="tutText">
+Here we are right before the main loop. For this demo we're going to 
+modulate the individual color components using key presses. To do that 
+we'll need to keep track of the values
+for the color components.
+</div>
+
+
+<div class="tutCode">            //While application is running
+            while( !quit )
+            {
+                //Handle events on queue
+                while( SDL_PollEvent( &amp;e ) != 0 )
+                {
+                    //User requests quit
+                    if( e.type == SDL_QUIT )
+                    {
+                        quit = true;
+                    }
+                    //On keypress change rgb values
+                    else if( e.type == SDL_KEYDOWN )
+                    {
+                        switch( e.key.keysym.sym )
+                        {
+                            //Increase red
+                            case SDLK_q:
+                            r += 32;
+                            break;
+                            
+                            //Increase green
+                            case SDLK_w:
+                            g += 32;
+                            break;
+                            
+                            //Increase blue
+                            case SDLK_e:
+                            b += 32;
+                            break;
+                            
+                            //Decrease red
+                            case SDLK_a:
+                            r -= 32;
+                            break;
+                            
+                            //Decrease green
+                            case SDLK_s:
+                            g -= 32;
+                            break;
+                            
+                            //Decrease blue
+                            case SDLK_d:
+                            b -= 32;
+                            break;
+                        }
+                    }
+                }
+</div>
+
+<div class="tutText">
+In our event loop we'll have the q, w, and e keys increase the red, 
+green, and blue components and we'll have the a, s, and d key decrease 
+the red, green, and blue components. They
+increase/decrease the components by 32 so it's noticable with every key 
+press.
+</div>
+
+
+<div class="tutCode">                //Clear screen
+                SDL_SetRenderDrawColor( gRenderer, 0xFF, 0xFF, 0xFF, 0xFF );
+                SDL_RenderClear( gRenderer );
+
+                //Modulate and render texture
+                gModulatedTexture.setColor( r, g, b );
+                gModulatedTexture.render( 0, 0 );
+
+                //Update screen
+                SDL_RenderPresent( gRenderer );
+            }
+</div>
+
+<div class="tutText">
+And here we are setting the texture modulation and rendering the texture.
+</div>
+
+
+
+            <div class="tutFooter">
+            Download the media and source code for this tutorial <a class="tutLink" href="http://lazyfoo.net/tutorials/SDL/12_color_modulation/12_color_modulation.zip">here</a>.<br>
+            <br>
+            <a class="leftNav" href="http://lazyfoo.net/tutorials/SDL/index.php#Color%20Modulation">Back to SDL Tutorials</a><br>
+            </div>
+
+        </div>
+
+        <div class="footer">
+
+<div style="text-align: center;">
+<!--Facebook-->
+<span style="line-height: 10px;" class="fb-share-button" data-href="http://lazyfoo.net/" data-type="button_count"></span>
+
+<!--Google+-->
+<g:plus action="share" annotation="bubble" height="20" href="http://lazyfoo.net/"></g:plus>
+
+<!--Twitter-->
+<a style="line-height: 0px;" href="https://twitter.com/share" class="twitter-share-button" data-lang="en">Tweet</a>
+
+</div>
+<div class="nav">
+<a class="nav" href="http://forums.libsdl.org/">SDL Forums</a>
+<a class="nav" href="http://lazyfoo.net/tutorials/SDL/index.php">SDL Tutorials</a>
+<a class="nav" href="http://lazyfoo.net/articles/index.php">Articles</a>
+<a class="nav" href="http://lazyfoo.net/tutorials/OpenGL/index.php">OpenGL Tutorials</a>
+<a class="nav" href="http://www.opengl.org/discussion_boards/forum.php">OpenGL Forums</a>
+<div class="ads">
+<script type="text/javascript"><!--
+google_ad_client = "pub-5880704953225255";
+google_ad_width = 468;
+google_ad_height = 60;
+google_ad_format = "468x60_as";
+google_ad_type = "text_image";
+google_ad_channel ="";
+google_color_border = "6699CC";
+google_color_bg = "003366";
+google_color_link = "FFFFFF";
+google_color_url = "AECCEB";
+google_color_text = "AECCEB";
+//--></script>
+<script type="text/javascript" src="12_color_modulation_files/show_ads.js">
+</script>
+</div><a class="nav" href="http://lazyfoo.net/index.php">News</a>
+<a class="nav" href="http://lazyfoo.net/faq.php">FAQs</a>
+<!--<a class="nav" href="http://lazyfoo.net/games/index.php">Games</a>-->
+<a class="nav" href="http://lazyfoo.net/contact.php">Contact</a>
+<a class="nav" href="http://lazyfoo.net/donate.php">Donations</a>
+
+</div>
+<h6>
+Copyright Lazy Foo' Productions 2004-2017
+</h6>
+
+</div>
+    
+
+</body></html>

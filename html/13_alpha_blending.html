@@ -1,0 +1,372 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+<html><head>
+
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+        <meta name="KEYWORDS" content="C++ SDL 2 Tutorial 2D Windows Linux Mac alpha blending transparency">
+        <meta name="DESCRIPTION" content="Render transparent textures with SDL 2">
+
+        <title>Lazy Foo' Productions - Alpha Blending</title>
+
+        <link rel="stylesheet" type="text/css" href="13_alpha_blending_files/lazy.css">
+
+    </head>
+
+    <body>
+
+        <div class="header">
+
+<h1 style="margin-bottom:0px;padding-bottom:0px;border-bottom:0px;">Lazy Foo' Productions</h1>
+<div class="nav">
+<a class="nav" href="http://forums.libsdl.org/">SDL Forums</a>
+<a class="nav" href="http://lazyfoo.net/tutorials/SDL/index.php">SDL Tutorials</a>
+<a class="nav" href="http://lazyfoo.net/articles/index.php">Articles</a>
+<a class="nav" href="http://lazyfoo.net/tutorials/OpenGL/index.php">OpenGL Tutorials</a>
+<a class="nav" href="http://www.opengl.org/discussion_boards/forum.php">OpenGL Forums</a>
+<div class="ads">
+<script id="twitter-wjs" src="13_alpha_blending_files/widgets.js"></script><script id="facebook-jssdk" src="13_alpha_blending_files/sdk.js"></script><script type="text/javascript" async="" src="13_alpha_blending_files/ga.js"></script><script type="text/javascript"><!--
+google_ad_client = "pub-5880704953225255";
+google_ad_width = 468;
+google_ad_height = 60;
+google_ad_format = "468x60_as";
+google_ad_type = "text_image";
+google_ad_channel ="";
+google_color_border = "6699CC";
+google_color_bg = "003366";
+google_color_link = "FFFFFF";
+google_color_url = "AECCEB";
+google_color_text = "AECCEB";
+//--></script>
+<script type="text/javascript" src="13_alpha_blending_files/show_ads.js">
+</script>
+</div><a class="nav" href="http://lazyfoo.net/index.php">News</a>
+<a class="nav" href="http://lazyfoo.net/faq.php">FAQs</a>
+<!--<a class="nav" href="http://lazyfoo.net/games/index.php">Games</a>-->
+<a class="nav" href="http://lazyfoo.net/contact.php">Contact</a>
+<a class="nav" href="http://lazyfoo.net/donate.php">Donations</a>
+
+</div><script type="text/javascript">
+
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-32350292-1']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+
+</script>
+<!--Init facebook-->
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) return;
+  js = d.createElement(s); js.id = id;
+  js.src = "//connect.facebook.net/en_US/sdk.js#xfbml=1&version=v2.0";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+
+<!--Init twitter-->
+<script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src="https://platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs");</script>
+
+<!--Init google+-->
+<script src="13_alpha_blending_files/plusone.js"></script>
+</div>        
+        <div class="content">
+
+            <div class="tutPreface"><h1 class="tutHead">Alpha Blending</h1>
+            <div class="tutImg"><img src="13_alpha_blending_files/preview.png"></div>
+            <h6>Last Updated 7/13/14</h6>
+            Thanks to new hardware accelerated rendering, transparency 
+is much faster in SDL 2.0. Here we'll use alpha modulation (which works 
+much like
+            <a class="tutLink" href="http://lazyfoo.net/tutorials/SDL/12_color_modulation/index.php">color modulation</a>) to control the transparency of a texture.
+            </div>
+
+<div class="tutCode">//Texture wrapper class
+class LTexture
+{
+    public:
+        //Initializes variables
+        LTexture();
+
+        //Deallocates memory
+        ~LTexture();
+
+        //Loads image at specified path
+        bool loadFromFile( std::string path );
+
+        //Deallocates texture
+        void free();
+
+        //Set color modulation
+        void setColor( Uint8 red, Uint8 green, Uint8 blue );
+
+        //Set blending
+        void setBlendMode( SDL_BlendMode blending );
+
+        //Set alpha modulation
+        void setAlpha( Uint8 alpha );
+        
+        //Renders texture at given point
+        void render( int x, int y, SDL_Rect* clip = NULL );
+
+        //Gets image dimensions
+        int getWidth();
+        int getHeight();
+
+    private:
+        //The actual hardware texture
+        SDL_Texture* mTexture;
+
+        //Image dimensions
+        int mWidth;
+        int mHeight;
+};
+</div>
+
+<div class="tutText">
+Here we're going to add two functions to support alpha transparency on a
+ texture. First there's setAlpha which will function much like setColor 
+did in the color modulation tutorial.
+There's also setBlendMode which will control how the texture is blended.
+ In order to get blending to work properly, you must set the blend mode 
+on the texture. We'll cover this in
+detail later.
+</div>
+
+
+<div class="tutCode">bool loadMedia()
+{
+    //Loading success flag
+    bool success = true;
+
+    //Load front alpha texture
+    if( !gModulatedTexture.loadFromFile( "13_alpha_blending/fadeout.png" ) )
+    {
+        printf( "Failed to load front texture!\n" );
+        success = false;
+    }
+    else
+    {
+        //Set standard alpha blending
+        gModulatedTexture.setBlendMode( SDL_BLENDMODE_BLEND );
+    }
+
+    //Load background texture
+    if( !gBackgroundTexture.loadFromFile( "13_alpha_blending/fadein.png" ) )
+    {
+        printf( "Failed to load background texture!\n" );
+        success = false;
+    }
+    
+    return success;
+}
+</div>
+
+<div class="tutText">
+Here in the texture loading function we're loading the front texture 
+we're going to alpha blend and a background texture. As the front 
+texture gets more transparent, we'll be able to
+see more of the back texture. As you can see in the code, after we load 
+the front texture successfully we set the
+<a class="tutLink" href="http://wiki.libsdl.org/SDL_BlendMode">SDL BlendMode</a> to blend so blending is enabled. Since the background isn't going to be transparent, we don't
+have to set the blending on it.<br>
+<br>
+Now how does alpha work? Alpha is opacity, and the lower the opacity the
+ more we can see through it. Like red, green, or blue color components 
+it goes from 0 to 255 when modulating
+it. The best way to understand it is with some examples. Say if we had 
+the front image on a white background.<br>
+<br>
+This is the front image at 255 (100% alpha):<br>
+<div class="tutImg"><img src="13_alpha_blending_files/alpha100.png"></div>
+<br>
+This is the front image at 191 (75% alpha):<br>
+<div class="tutImg"><img src="13_alpha_blending_files/alpha075.png"></div>
+<br>
+This is the front image at 127 (50% alpha):<br>
+<div class="tutImg"><img src="13_alpha_blending_files/alpha050.png"></div>
+<br>
+This is the front image at 63 (25% alpha):<br>
+<div class="tutImg"><img src="13_alpha_blending_files/alpha025.png"></div>
+<br>
+This is the front image at 0 (0% alpha):<br>
+<div class="tutImg"><img src="13_alpha_blending_files/alpha000.png"></div>
+<br>
+As you can see, the lower the alpha the more transparent it is.
+</div>
+
+
+<div class="tutCode">void LTexture::setBlendMode( SDL_BlendMode blending )
+{
+    //Set blending function
+    SDL_SetTextureBlendMode( mTexture, blending );
+}
+        
+void LTexture::setAlpha( Uint8 alpha )
+{
+    //Modulate texture alpha
+    SDL_SetTextureAlphaMod( mTexture, alpha );
+}
+</div>
+
+<div class="tutText">
+Here are the actual SDL functions that do the actual work.
+<a class="tutLink" href="http://wiki.libsdl.org/SDL_SetTextureBlendMode">SDL_SetTextureBlendMode</a> in setBlendMode allows us to enable blending and
+<a class="tutLink" href="http://wiki.libsdl.org/SDL_SetTextureAlphaMod">SDL_SetTextureAlphaMod</a> allows us to set the amount of alpha for the whole texture.
+</div>
+
+
+<div class="tutCode">            //Main loop flag
+            bool quit = false;
+
+            //Event handler
+            SDL_Event e;
+
+            //Modulation component
+            Uint8 a = 255;
+            
+            //While application is running
+            while( !quit )
+            {
+</div>
+
+<div class="tutText">
+Right before entering the main loop, we declare a variable to control 
+how much alpha the texture has. It is initialized to 255 so the front 
+texture starts out completely opaque.
+</div>
+
+
+<div class="tutCode">                //Handle events on queue
+                while( SDL_PollEvent( &amp;e ) != 0 )
+                {
+                    //User requests quit
+                    if( e.type == SDL_QUIT )
+                    {
+                        quit = true;
+                    }
+                    //Handle key presses
+                    else if( e.type == SDL_KEYDOWN )
+                    {
+                        //Increase alpha on w
+                        if( e.key.keysym.sym == SDLK_w )
+                        {
+                            //Cap if over 255
+                            if( a + 32 &gt; 255 )
+                            {
+                                a = 255;
+                            }
+                            //Increment otherwise
+                            else
+                            {
+                                a += 32;
+                            }
+                        }
+                        //Decrease alpha on s
+                        else if( e.key.keysym.sym == SDLK_s )
+                        {
+                            //Cap if below 0
+                            if( a - 32 &lt; 0 )
+                            {
+                                a = 0;
+                            }
+                            //Decrement otherwise
+                            else
+                            {
+                                a -= 32;
+                            }
+                        }
+                    }
+                }
+</div>
+
+<div class="tutText">
+The event loop handles quit events and making the alpha value go up/down with the w/s keys.
+</div>
+
+
+<div class="tutCode">                //Clear screen
+                SDL_SetRenderDrawColor( gRenderer, 0xFF, 0xFF, 0xFF, 0xFF );
+                SDL_RenderClear( gRenderer );
+
+                //Render background
+                gBackgroundTexture.render( 0, 0 );
+
+                //Render front blended
+                gModulatedTexture.setAlpha( a );
+                gModulatedTexture.render( 0, 0 );
+
+                //Update screen
+                SDL_RenderPresent( gRenderer );
+</div>
+
+<div class="tutText">
+At the end of the main loop we do our rendering. After clearing the 
+screen we render the background first and then we render the front 
+modulated texture over it. Right before
+rendering the front texture, we set its alpha value. Try 
+increasing/decreasing the alpha value to see how transparency affects 
+the rendering.
+</div>
+
+            <div class="tutFooter">
+            Download the media and source code for this tutorial <a class="tutLink" href="http://lazyfoo.net/tutorials/SDL/13_alpha_blending/13_alpha_blending.zip">here</a>.<br>
+            <br>
+            <a class="leftNav" href="http://lazyfoo.net/tutorials/SDL/index.php#Alpha%20Blending">Back to SDL Tutorials</a><br>
+            </div>
+
+        </div>
+
+        <div class="footer">
+
+<div style="text-align: center;">
+<!--Facebook-->
+<span style="line-height: 10px;" class="fb-share-button" data-href="http://lazyfoo.net/" data-type="button_count"></span>
+
+<!--Google+-->
+<g:plus action="share" annotation="bubble" height="20" href="http://lazyfoo.net/"></g:plus>
+
+<!--Twitter-->
+<a style="line-height: 0px;" href="https://twitter.com/share" class="twitter-share-button" data-lang="en">Tweet</a>
+
+</div>
+<div class="nav">
+<a class="nav" href="http://forums.libsdl.org/">SDL Forums</a>
+<a class="nav" href="http://lazyfoo.net/tutorials/SDL/index.php">SDL Tutorials</a>
+<a class="nav" href="http://lazyfoo.net/articles/index.php">Articles</a>
+<a class="nav" href="http://lazyfoo.net/tutorials/OpenGL/index.php">OpenGL Tutorials</a>
+<a class="nav" href="http://www.opengl.org/discussion_boards/forum.php">OpenGL Forums</a>
+<div class="ads">
+<script type="text/javascript"><!--
+google_ad_client = "pub-5880704953225255";
+google_ad_width = 468;
+google_ad_height = 60;
+google_ad_format = "468x60_as";
+google_ad_type = "text_image";
+google_ad_channel ="";
+google_color_border = "6699CC";
+google_color_bg = "003366";
+google_color_link = "FFFFFF";
+google_color_url = "AECCEB";
+google_color_text = "AECCEB";
+//--></script>
+<script type="text/javascript" src="13_alpha_blending_files/show_ads.js">
+</script>
+</div><a class="nav" href="http://lazyfoo.net/index.php">News</a>
+<a class="nav" href="http://lazyfoo.net/faq.php">FAQs</a>
+<!--<a class="nav" href="http://lazyfoo.net/games/index.php">Games</a>-->
+<a class="nav" href="http://lazyfoo.net/contact.php">Contact</a>
+<a class="nav" href="http://lazyfoo.net/donate.php">Donations</a>
+
+</div>
+<h6>
+Copyright Lazy Foo' Productions 2004-2017
+</h6>
+
+</div>
+    
+
+</body></html>

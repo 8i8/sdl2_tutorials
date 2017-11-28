@@ -1,0 +1,483 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+<html><head>
+
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+        <meta name="KEYWORDS" content="C++ SDL 2 Tutorial 2D Windows Linux Mac mouse input clicks motion">
+        <meta name="DESCRIPTION" content="Render text with TTF fonts in SDL 2">
+
+        <title>Lazy Foo' Productions - Mouse Events</title>
+
+        <link rel="stylesheet" type="text/css" href="17_mouse_events_files/lazy.css">
+
+    </head>
+
+    <body>
+
+        <div class="header">
+
+<h1 style="margin-bottom:0px;padding-bottom:0px;border-bottom:0px;">Lazy Foo' Productions</h1>
+<div class="nav">
+<a class="nav" href="http://forums.libsdl.org/">SDL Forums</a>
+<a class="nav" href="http://lazyfoo.net/tutorials/SDL/index.php">SDL Tutorials</a>
+<a class="nav" href="http://lazyfoo.net/articles/index.php">Articles</a>
+<a class="nav" href="http://lazyfoo.net/tutorials/OpenGL/index.php">OpenGL Tutorials</a>
+<a class="nav" href="http://www.opengl.org/discussion_boards/forum.php">OpenGL Forums</a>
+<div class="ads">
+<script id="twitter-wjs" src="17_mouse_events_files/widgets.js"></script><script id="facebook-jssdk" src="17_mouse_events_files/sdk.js"></script><script type="text/javascript" async="" src="17_mouse_events_files/ga.js"></script><script type="text/javascript"><!--
+google_ad_client = "pub-5880704953225255";
+google_ad_width = 468;
+google_ad_height = 60;
+google_ad_format = "468x60_as";
+google_ad_type = "text_image";
+google_ad_channel ="";
+google_color_border = "6699CC";
+google_color_bg = "003366";
+google_color_link = "FFFFFF";
+google_color_url = "AECCEB";
+google_color_text = "AECCEB";
+//--></script>
+<script type="text/javascript" src="17_mouse_events_files/show_ads.js">
+</script>
+</div><a class="nav" href="http://lazyfoo.net/index.php">News</a>
+<a class="nav" href="http://lazyfoo.net/faq.php">FAQs</a>
+<!--<a class="nav" href="http://lazyfoo.net/games/index.php">Games</a>-->
+<a class="nav" href="http://lazyfoo.net/contact.php">Contact</a>
+<a class="nav" href="http://lazyfoo.net/donate.php">Donations</a>
+
+</div><script type="text/javascript">
+
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-32350292-1']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+
+</script>
+<!--Init facebook-->
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) return;
+  js = d.createElement(s); js.id = id;
+  js.src = "//connect.facebook.net/en_US/sdk.js#xfbml=1&version=v2.0";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+
+<!--Init twitter-->
+<script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src="https://platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs");</script>
+
+<!--Init google+-->
+<script src="17_mouse_events_files/plusone.js"></script>
+</div>        
+        <div class="content">
+
+            <div class="tutPreface"><h1 class="tutHead">Mouse Events</h1>
+            <div class="tutImg"><img src="17_mouse_events_files/preview.png"></div>
+            <h6>Last Updated 2/23/14</h6>
+            Like with key presses, SDL has <a class="tutLink" href="http://lazyfoo.net/tutorials/SDL/03_event_driven_programming/index.php">event structures</a> to handle mouse events such as mouse motion, mouse
+            button presses, and mouse button releasing. In this tutorial we'll make a bunch of buttons we can interact with.
+            </div>
+
+
+<div class="tutCode">//Button constants
+const int BUTTON_WIDTH = 300;
+const int BUTTON_HEIGHT = 200;
+const int TOTAL_BUTTONS = 4;
+
+enum LButtonSprite
+{
+    BUTTON_SPRITE_MOUSE_OUT = 0,
+    BUTTON_SPRITE_MOUSE_OVER_MOTION = 1,
+    BUTTON_SPRITE_MOUSE_DOWN = 2,
+    BUTTON_SPRITE_MOUSE_UP = 3,
+    BUTTON_SPRITE_TOTAL = 4
+};
+</div>
+
+<div class="tutText">
+For this tutorial we'll have 4 buttons on the screen. Depending on 
+whether the mouse moved over, clicked on, released on, or moved out of 
+the button we'll display a different sprite.
+These constants are here to define all this.
+</div>
+
+
+<div class="tutCode">//Texture wrapper class
+class LTexture
+{
+    public:
+        //Initializes variables
+        LTexture();
+
+        //Deallocates memory
+        ~LTexture();
+
+        //Loads image at specified path
+        bool loadFromFile( std::string path );
+        
+        #ifdef _SDL_TTF_H
+        //Creates image from font string
+        bool loadFromRenderedText( std::string textureText, SDL_Color textColor );
+        #endif
+        
+        //Deallocates texture
+        void free();
+
+        //Set color modulation
+        void setColor( Uint8 red, Uint8 green, Uint8 blue );
+
+        //Set blending
+        void setBlendMode( SDL_BlendMode blending );
+
+        //Set alpha modulation
+        void setAlpha( Uint8 alpha );
+        
+        //Renders texture at given point
+        void render( int x, int y, SDL_Rect* clip = NULL, double angle = 0.0, SDL_Point* center = NULL, SDL_RendererFlip flip = SDL_FLIP_NONE );
+
+        //Gets image dimensions
+        int getWidth();
+        int getHeight();
+
+    private:
+        //The actual hardware texture
+        SDL_Texture* mTexture;
+
+        //Image dimensions
+        int mWidth;
+        int mHeight;
+};
+</div>
+
+<div class="tutText">
+We're making a slight modification to the texture class. For this tutorial we won't be <a class="tutLink" href="http://lazyfoo.net/tutorials/SDL/16_true_type_fonts/index.php">using SDL_ttf to render text</a>.
+This means we don't need the loadFromRenderedText function. Rather than 
+deleting code we may need in the future, we're going to wrap it in <b>if</b> <b>def</b>ined
+statements
+ so the compiler will ignore it if we do not include SDL_ttf. Like 
+#include, #ifdef is a macro which is used to talk to the compiler. In 
+this case it says if SDL_ttf is
+not defined, ignore this piece of code.
+</div>
+
+
+<div class="tutCode">//The mouse button
+class LButton
+{
+    public:
+        //Initializes internal variables
+        LButton();
+
+        //Sets top left position
+        void setPosition( int x, int y );
+
+        //Handles mouse event
+        void handleEvent( SDL_Event* e );
+    
+        //Shows button sprite
+        void render();
+
+    private:
+        //Top left position
+        SDL_Point mPosition;
+
+        //Currently used global sprite
+        LButtonSprite mCurrentSprite;
+};
+</div>
+
+<div class="tutText">
+Here is the class to represent a button. It has a constructor to 
+initialize, a position setter, an event handler for the event loop, and a
+ rendering function. It also has a position
+and a sprite enumeration so we know which sprite to render for the 
+button.
+</div>
+
+
+<div class="tutCode">#ifdef _SDL_TTF_H
+bool LTexture::loadFromRenderedText( std::string textureText, SDL_Color textColor )
+{
+    //Get rid of preexisting texture
+    free();
+
+    //Render text surface
+    SDL_Surface* textSurface = TTF_RenderText_Solid( gFont, textureText.c_str(), textColor );
+    if( textSurface == NULL )
+    {
+        printf( "Unable to render text surface! SDL_ttf Error: %s\n", TTF_GetError() );
+    }
+    else
+    {
+        //Create texture from surface pixels
+        mTexture = SDL_CreateTextureFromSurface( gRenderer, textSurface );
+        if( mTexture == NULL )
+        {
+            printf( "Unable to create texture from rendered text! SDL Error: %s\n", SDL_GetError() );
+        }
+        else
+        {
+            //Get image dimensions
+            mWidth = textSurface-&gt;w;
+            mHeight = textSurface-&gt;h;
+        }
+
+        //Get rid of old surface
+        SDL_FreeSurface( textSurface );
+    }
+    
+    //Return success
+    return mTexture != NULL;
+}
+#endif
+</div>
+
+<div class="tutText">
+To make sure our source compiles without SDL_ttf, here again we 
+sandwhich the loading from font function in another ifdef condition.
+</div>
+
+
+<div class="tutCode">LButton::LButton()
+{
+    mPosition.x = 0;
+    mPosition.y = 0;
+
+    mCurrentSprite = BUTTON_SPRITE_MOUSE_OUT;
+}
+
+void LButton::setPosition( int x, int y )
+{
+    mPosition.x = x;
+    mPosition.y = y;
+}
+</div>
+
+<div class="tutText">
+Here are the constructor for the button and a position setting function.
+ As you can see, they initialize the default sprite and set position.
+</div>
+
+
+<div class="tutCode">void LButton::handleEvent( SDL_Event* e )
+{
+    //If mouse event happened
+    if( e-&gt;type == SDL_MOUSEMOTION || e-&gt;type == SDL_MOUSEBUTTONDOWN || e-&gt;type == SDL_MOUSEBUTTONUP )
+    {
+        //Get mouse position
+        int x, y;
+        SDL_GetMouseState( &amp;x, &amp;y );
+</div>
+
+<div class="tutText">
+Here's the meat of the tutorial where we handle the mouse events. This 
+function will be called in the event loop and will handle an event taken
+ from the event queue for an
+individual button.<br>
+<br>
+First we check if the event coming in is a mouse event specifically a 
+mouse motion event (when the mouse moves), a mouse button down event 
+(when you click a mouse button), or
+a mouse button up event (when you release a mouse click).<br>
+<br>
+If one of these mouse events do occur, we check the mouse position using <a class="tutLink" href="http://wiki.libsdl.org/SDL_GetMouseState">SDL_GetMouseState</a>. Depending on
+whether the mouse is over the button or not, we'll want to display different sprites.
+</div>
+
+
+<div class="tutCode">        //Check if mouse is in button
+        bool inside = true;
+
+        //Mouse is left of the button
+        if( x &lt; mPosition.x )
+        {
+            inside = false;
+        }
+        //Mouse is right of the button
+        else if( x &gt; mPosition.x + BUTTON_WIDTH )
+        {
+            inside = false;
+        }
+        //Mouse above the button
+        else if( y &lt; mPosition.y )
+        {
+            inside = false;
+        }
+        //Mouse below the button
+        else if( y &gt; mPosition.y + BUTTON_HEIGHT )
+        {
+            inside = false;
+        }
+</div>
+
+<div class="tutText">
+Here we want to check if the mouse is inside the button or not. Since <a class="tutLink" href="http://lazyfoo.net/tutorials/SDL/08_geometry_rendering/index.php">we use a different coordinate system with SDL</a>,
+the origin of the button is at the top left. This means every x 
+coordinate less than the x position is outside of the button and every y
+ coordinate less than the y position is too.
+Everything right of the button is the x position + the width and 
+everything below the button is the y position + the height.<br>
+<br>
+This is what this piece of code does. If the mouse position is in any 
+way outside the button, it marks the inside marker as false. Otherwise 
+it remains the initial true value.
+</div>
+
+
+<div class="tutCode">        //Mouse is outside button
+        if( !inside )
+        {
+            mCurrentSprite = BUTTON_SPRITE_MOUSE_OUT;
+        }
+        //Mouse is inside button
+        else
+        {
+            //Set mouse over sprite
+            switch( e-&gt;type )
+            {
+                case SDL_MOUSEMOTION:
+                mCurrentSprite = BUTTON_SPRITE_MOUSE_OVER_MOTION;
+                break;
+            
+                case SDL_MOUSEBUTTONDOWN:
+                mCurrentSprite = BUTTON_SPRITE_MOUSE_DOWN;
+                break;
+                
+                case SDL_MOUSEBUTTONUP:
+                mCurrentSprite = BUTTON_SPRITE_MOUSE_UP;
+                break;
+            }
+        }
+    }
+}
+</div>
+
+<div class="tutText">
+Finally, we set the button sprite depending on whether the mouse is inside the button and the mouse event.<br>
+<br>
+If the mouse isn't inside the button, we set the mouse out sprite. If 
+the mouse is inside we set the sprite to mouse over on a mouse motion, 
+mouse down on a mouse button press, and
+mouse up on a mouse button release.
+</div>
+
+
+<div class="tutCode">void LButton::render()
+{
+    //Show current button sprite
+    gButtonSpriteSheetTexture.render( mPosition.x, mPosition.y, &amp;gSpriteClips[ mCurrentSprite ] );
+}
+</div>
+
+<div class="tutText">
+In the rendering function, we just render the current button sprite at the button position.
+</div>
+
+
+<div class="tutCode">            //While application is running
+            while( !quit )
+            {
+                //Handle events on queue
+                while( SDL_PollEvent( &amp;e ) != 0 )
+                {
+                    //User requests quit
+                    if( e.type == SDL_QUIT )
+                    {
+                        quit = true;
+                    }
+                    
+                    //Handle button events
+                    for( int i = 0; i &lt; TOTAL_BUTTONS; ++i )
+                    {
+                        gButtons[ i ].handleEvent( &amp;e );
+                    }
+                }
+
+                //Clear screen
+                SDL_SetRenderDrawColor( gRenderer, 0xFF, 0xFF, 0xFF, 0xFF );
+                SDL_RenderClear( gRenderer );
+
+                //Render buttons
+                for( int i = 0; i &lt; TOTAL_BUTTONS; ++i )
+                {
+                    gButtons[ i ].render();
+                }
+
+                //Update screen
+                SDL_RenderPresent( gRenderer );
+            }
+</div>
+
+<div class="tutText">
+Here is our main loop. In the event loop, we handle the quit event and 
+the events for all the buttons. In the rendering section, all the 
+buttons are rendered to the screen.<br>
+<br>
+There are also <a class="tutLink" href="http://wiki.libsdl.org/SDL_MouseWheelEvent">mouse wheel events</a> which weren't covered here, but if you look at the documentation and
+play around with it it shouldn't be too hard to figure out.
+
+</div>
+
+
+            <div class="tutFooter">
+            Download the media and source code for this tutorial <a class="tutLink" href="http://lazyfoo.net/tutorials/SDL/17_mouse_events/17_mouse_events.zip">here</a>.<br>
+            <br>
+            <a class="leftNav" href="http://lazyfoo.net/tutorials/SDL/index.php#Mouse%20Events">Back to SDL Tutorials</a><br>
+            </div>
+
+        </div>
+
+        <div class="footer">
+
+<div style="text-align: center;">
+<!--Facebook-->
+<span style="line-height: 10px;" class="fb-share-button" data-href="http://lazyfoo.net/" data-type="button_count"></span>
+
+<!--Google+-->
+<g:plus action="share" annotation="bubble" height="20" href="http://lazyfoo.net/"></g:plus>
+
+<!--Twitter-->
+<a style="line-height: 0px;" href="https://twitter.com/share" class="twitter-share-button" data-lang="en">Tweet</a>
+
+</div>
+<div class="nav">
+<a class="nav" href="http://forums.libsdl.org/">SDL Forums</a>
+<a class="nav" href="http://lazyfoo.net/tutorials/SDL/index.php">SDL Tutorials</a>
+<a class="nav" href="http://lazyfoo.net/articles/index.php">Articles</a>
+<a class="nav" href="http://lazyfoo.net/tutorials/OpenGL/index.php">OpenGL Tutorials</a>
+<a class="nav" href="http://www.opengl.org/discussion_boards/forum.php">OpenGL Forums</a>
+<div class="ads">
+<script type="text/javascript"><!--
+google_ad_client = "pub-5880704953225255";
+google_ad_width = 468;
+google_ad_height = 60;
+google_ad_format = "468x60_as";
+google_ad_type = "text_image";
+google_ad_channel ="";
+google_color_border = "6699CC";
+google_color_bg = "003366";
+google_color_link = "FFFFFF";
+google_color_url = "AECCEB";
+google_color_text = "AECCEB";
+//--></script>
+<script type="text/javascript" src="17_mouse_events_files/show_ads.js">
+</script>
+</div><a class="nav" href="http://lazyfoo.net/index.php">News</a>
+<a class="nav" href="http://lazyfoo.net/faq.php">FAQs</a>
+<!--<a class="nav" href="http://lazyfoo.net/games/index.php">Games</a>-->
+<a class="nav" href="http://lazyfoo.net/contact.php">Contact</a>
+<a class="nav" href="http://lazyfoo.net/donate.php">Donations</a>
+
+</div>
+<h6>
+Copyright Lazy Foo' Productions 2004-2017
+</h6>
+
+</div>
+    
+
+</body></html>

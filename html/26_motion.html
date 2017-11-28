@@ -1,0 +1,376 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+<html><head>
+
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+        <meta name="KEYWORDS" content="C++ SDL 2 Tutorial 2D Windows Linux Mac moving objects">
+        <meta name="DESCRIPTION" content="Move around game objects in SDL 2">
+
+        <title>Lazy Foo' Productions - Motion</title>
+
+        <link rel="stylesheet" type="text/css" href="26_motion_files/lazy.css">
+
+    </head>
+
+    <body>
+
+        <div class="header">
+
+<h1 style="margin-bottom:0px;padding-bottom:0px;border-bottom:0px;">Lazy Foo' Productions</h1>
+<div class="nav">
+<a class="nav" href="http://forums.libsdl.org/">SDL Forums</a>
+<a class="nav" href="http://lazyfoo.net/tutorials/SDL/index.php">SDL Tutorials</a>
+<a class="nav" href="http://lazyfoo.net/articles/index.php">Articles</a>
+<a class="nav" href="http://lazyfoo.net/tutorials/OpenGL/index.php">OpenGL Tutorials</a>
+<a class="nav" href="http://www.opengl.org/discussion_boards/forum.php">OpenGL Forums</a>
+<div class="ads">
+<script id="twitter-wjs" src="26_motion_files/widgets.js"></script><script id="facebook-jssdk" src="26_motion_files/sdk.js"></script><script type="text/javascript" async="" src="26_motion_files/ga.js"></script><script type="text/javascript"><!--
+google_ad_client = "pub-5880704953225255";
+google_ad_width = 468;
+google_ad_height = 60;
+google_ad_format = "468x60_as";
+google_ad_type = "text_image";
+google_ad_channel ="";
+google_color_border = "6699CC";
+google_color_bg = "003366";
+google_color_link = "FFFFFF";
+google_color_url = "AECCEB";
+google_color_text = "AECCEB";
+//--></script>
+<script type="text/javascript" src="26_motion_files/show_ads.js">
+</script>
+</div><a class="nav" href="http://lazyfoo.net/index.php">News</a>
+<a class="nav" href="http://lazyfoo.net/faq.php">FAQs</a>
+<!--<a class="nav" href="http://lazyfoo.net/games/index.php">Games</a>-->
+<a class="nav" href="http://lazyfoo.net/contact.php">Contact</a>
+<a class="nav" href="http://lazyfoo.net/donate.php">Donations</a>
+
+</div><script type="text/javascript">
+
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-32350292-1']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+
+</script>
+<!--Init facebook-->
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) return;
+  js = d.createElement(s); js.id = id;
+  js.src = "//connect.facebook.net/en_US/sdk.js#xfbml=1&version=v2.0";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+
+<!--Init twitter-->
+<script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src="https://platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs");</script>
+
+<!--Init google+-->
+<script src="26_motion_files/plusone.js"></script>
+</div>        
+        <div class="content">
+
+            <div class="tutPreface"><h1 class="tutHead">Motion</h1>
+            <div class="tutImg"><img src="26_motion_files/preview.png"></div>
+            <h6>Last Updated 3/23/14</h6>
+            Now that we know how to render, handle input, and deal with 
+time we can now know everything we need move around things on the 
+screen. Here will do a basic dot moving
+            around.
+            </div>
+            
+
+<div class="tutCode">//The dot that will move around on the screen
+class Dot
+{
+    public:
+        //The dimensions of the dot
+        static const int DOT_WIDTH = 20;
+        static const int DOT_HEIGHT = 20;
+
+        //Maximum axis velocity of the dot
+        static const int DOT_VEL = 10;
+
+        //Initializes the variables
+        Dot();
+
+        //Takes key presses and adjusts the dot's velocity
+        void handleEvent( SDL_Event&amp; e );
+
+        //Moves the dot
+        void move();
+
+        //Shows the dot on the screen
+        void render();
+
+    private:
+        //The X and Y offsets of the dot
+        int mPosX, mPosY;
+
+        //The velocity of the dot
+        int mVelX, mVelY;
+};
+</div>
+
+<div class="tutText">
+Here is the class for the dot we're going to be moving around on the 
+screen. It has some constants to define its dimensions and velocity. It 
+has a constructor, an event handler,
+a function to move it every frame, and a function to render it. As for 
+data members, it has variables for its x/y position and x/y velocity.
+</div>
+
+<div class="tutCode">Dot::Dot()
+{
+    //Initialize the offsets
+    mPosX = 0;
+    mPosY = 0;
+
+    //Initialize the velocity
+    mVelX = 0;
+    mVelY = 0;
+}
+</div>
+
+<div class="tutText">
+The constructor simply initializes the variables.
+</div>
+
+
+<div class="tutCode">void Dot::handleEvent( SDL_Event&amp; e )
+{
+    //If a key was pressed
+    if( e.type == SDL_KEYDOWN &amp;&amp; e.key.repeat == 0 )
+    {
+        //Adjust the velocity
+        switch( e.key.keysym.sym )
+        {
+            case SDLK_UP: mVelY -= DOT_VEL; break;
+            case SDLK_DOWN: mVelY += DOT_VEL; break;
+            case SDLK_LEFT: mVelX -= DOT_VEL; break;
+            case SDLK_RIGHT: mVelX += DOT_VEL; break;
+        }
+    }
+</div>
+
+<div class="tutText">
+In our event handler we're going to set the velocity based on the key press.<br>
+<br>
+You may be wondering why we don't simply just increase the positon when 
+we press the key. If we were to say add to the x position every time we 
+press the right key, we would have to
+repeatedly press the right key to keep it moving. By setting the 
+velocity, we just have to press the key once.<br>
+<br>
+If you're wondering why we're checking if the key repeat is 0, it's 
+because key repeat is enabled by default and if you press and hold a key
+ it will report multiple key presses. That
+means we have to check if the key press is the first one because we only
+ care when the key was first pressed.<br>
+<br>
+For those of you who haven't studied physics yet, velocity is the 
+speed/direction of an object. If an object is moving right at 10 pixels 
+per frame, it has a velocity of 10. If it is
+moving to the left at 10 pixel per frame, it has a velocity of -10. If 
+the dot's velocity is 10, this means after 10 frames it will have moved 
+100 pixels over.
+</div>
+
+
+<div class="tutCode">    //If a key was released
+    else if( e.type == SDL_KEYUP &amp;&amp; e.key.repeat == 0 )
+    {
+        //Adjust the velocity
+        switch( e.key.keysym.sym )
+        {
+            case SDLK_UP: mVelY += DOT_VEL; break;
+            case SDLK_DOWN: mVelY -= DOT_VEL; break;
+            case SDLK_LEFT: mVelX += DOT_VEL; break;
+            case SDLK_RIGHT: mVelX -= DOT_VEL; break;
+        }
+    }
+}
+</div>
+
+<div class="tutText">
+When we release a key, we have to undo the velocity change when first 
+pressed it. When we pressed right key, we added to the x velocity. When 
+we release the right key here, we
+subtract from the x velocity to return it to 0.
+</div>
+
+
+<div class="tutCode">void Dot::move()
+{
+    //Move the dot left or right
+    mPosX += mVelX;
+
+    //If the dot went too far to the left or right
+    if( ( mPosX &lt; 0 ) || ( mPosX + DOT_WIDTH &gt; SCREEN_WIDTH ) )
+    {
+        //Move back
+        mPosX -= mVelX;
+    }
+</div>
+
+<div class="tutText">
+Here's the function we call every frame to move the dot.<br>
+<br>
+First we move the dot along the x axis based on its x velocity. After 
+that we check if the dot moved off the screen. If it did, we then undo 
+the movement along the x axis.
+</div>
+
+
+<div class="tutCode">    //Move the dot up or down
+    mPosY += mVelY;
+
+    //If the dot went too far up or down
+    if( ( mPosY &lt; 0 ) || ( mPosY + DOT_HEIGHT &gt; SCREEN_HEIGHT ) )
+    {
+        //Move back
+        mPosY -= mVelY;
+    }
+}
+</div>
+
+<div class="tutText">
+Then here we do the same for the y axis.
+</div>
+
+
+<div class="tutCode">void Dot::render()
+{
+    //Show the dot
+    gDotTexture.render( mPosX, mPosY );
+}
+</div>
+
+<div class="tutText">
+In the rendering function we render the dot texture at the dot's position.
+</div>
+
+
+<div class="tutCode">            //Main loop flag
+            bool quit = false;
+
+            //Event handler
+            SDL_Event e;
+
+            //The dot that will be moving around on the screen
+            Dot dot;
+</div>
+
+<div class="tutText">
+Before we enter the main loop we declare a dot object.
+</div>
+
+
+<div class="tutCode">            //While application is running
+            while( !quit )
+            {
+                //Handle events on queue
+                while( SDL_PollEvent( &amp;e ) != 0 )
+                {
+                    //User requests quit
+                    if( e.type == SDL_QUIT )
+                    {
+                        quit = true;
+                    }
+
+                    //Handle input for the dot
+                    dot.handleEvent( e );
+                }
+
+                //Move the dot
+                dot.move();
+
+                //Clear screen
+                SDL_SetRenderDrawColor( gRenderer, 0xFF, 0xFF, 0xFF, 0xFF );
+                SDL_RenderClear( gRenderer );
+
+                //Render objects
+                dot.render();
+
+                //Update screen
+                SDL_RenderPresent( gRenderer );
+            }
+</div>
+
+<div class="tutText">
+Finally here we use our dot in the main loop. In the event loop we 
+handle events for the dot. After that we update the dot's position and 
+then render it to the screen.<br>
+<br>
+Now in this tutorial we're basing the velocity as amount moved per 
+frame. In most games, the velocity is done per second. The reason were 
+doing it per frame is that it is easier, but
+if you know physics it shouldn't be hard to update the dot's position 
+based on time. If you don't know physics, just stick with per frame 
+velocity for now.
+</div>
+
+
+            <div class="tutFooter">
+            Download the media and source code for this tutorial <a class="tutLink" href="http://lazyfoo.net/tutorials/SDL/26_motion/26_motion.zip">here</a>.<br>
+            <br>
+            <a class="leftNav" href="http://lazyfoo.net/tutorials/SDL/index.php#Motion">Back to SDL Tutorials</a><br>
+            </div>
+
+        </div>
+
+        <div class="footer">
+
+<div style="text-align: center;">
+<!--Facebook-->
+<span style="line-height: 10px;" class="fb-share-button" data-href="http://lazyfoo.net/" data-type="button_count"></span>
+
+<!--Google+-->
+<g:plus action="share" annotation="bubble" height="20" href="http://lazyfoo.net/"></g:plus>
+
+<!--Twitter-->
+<a style="line-height: 0px;" href="https://twitter.com/share" class="twitter-share-button" data-lang="en">Tweet</a>
+
+</div>
+<div class="nav">
+<a class="nav" href="http://forums.libsdl.org/">SDL Forums</a>
+<a class="nav" href="http://lazyfoo.net/tutorials/SDL/index.php">SDL Tutorials</a>
+<a class="nav" href="http://lazyfoo.net/articles/index.php">Articles</a>
+<a class="nav" href="http://lazyfoo.net/tutorials/OpenGL/index.php">OpenGL Tutorials</a>
+<a class="nav" href="http://www.opengl.org/discussion_boards/forum.php">OpenGL Forums</a>
+<div class="ads">
+<script type="text/javascript"><!--
+google_ad_client = "pub-5880704953225255";
+google_ad_width = 468;
+google_ad_height = 60;
+google_ad_format = "468x60_as";
+google_ad_type = "text_image";
+google_ad_channel ="";
+google_color_border = "6699CC";
+google_color_bg = "003366";
+google_color_link = "FFFFFF";
+google_color_url = "AECCEB";
+google_color_text = "AECCEB";
+//--></script>
+<script type="text/javascript" src="26_motion_files/show_ads.js">
+</script>
+</div><a class="nav" href="http://lazyfoo.net/index.php">News</a>
+<a class="nav" href="http://lazyfoo.net/faq.php">FAQs</a>
+<!--<a class="nav" href="http://lazyfoo.net/games/index.php">Games</a>-->
+<a class="nav" href="http://lazyfoo.net/contact.php">Contact</a>
+<a class="nav" href="http://lazyfoo.net/donate.php">Donations</a>
+
+</div>
+<h6>
+Copyright Lazy Foo' Productions 2004-2017
+</h6>
+
+</div>
+    
+
+</body></html>

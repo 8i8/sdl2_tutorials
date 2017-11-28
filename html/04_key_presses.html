@@ -1,0 +1,390 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+<html><head>
+
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+        <meta name="KEYWORDS" content="C++ SDL 2 Tutorial 2D Windows Linux Mac SDL keyboard presses">
+        <meta name="DESCRIPTION" content="Handle keys with SDL">
+
+        <title>Lazy Foo' Productions - Key Presses</title>
+
+        <link rel="stylesheet" type="text/css" href="04_key_presses_files/lazy.css">
+
+    </head>
+
+    <body>
+
+        <div class="header">
+
+<h1 style="margin-bottom:0px;padding-bottom:0px;border-bottom:0px;">Lazy Foo' Productions</h1>
+<div class="nav">
+<a class="nav" href="http://forums.libsdl.org/">SDL Forums</a>
+<a class="nav" href="http://lazyfoo.net/tutorials/SDL/index.php">SDL Tutorials</a>
+<a class="nav" href="http://lazyfoo.net/articles/index.php">Articles</a>
+<a class="nav" href="http://lazyfoo.net/tutorials/OpenGL/index.php">OpenGL Tutorials</a>
+<a class="nav" href="http://www.opengl.org/discussion_boards/forum.php">OpenGL Forums</a>
+<div class="ads">
+<script id="twitter-wjs" src="04_key_presses_files/widgets.js"></script><script id="facebook-jssdk" src="04_key_presses_files/sdk.js"></script><script type="text/javascript" async="" src="04_key_presses_files/ga.js"></script><script type="text/javascript"><!--
+google_ad_client = "pub-5880704953225255";
+google_ad_width = 468;
+google_ad_height = 60;
+google_ad_format = "468x60_as";
+google_ad_type = "text_image";
+google_ad_channel ="";
+google_color_border = "6699CC";
+google_color_bg = "003366";
+google_color_link = "FFFFFF";
+google_color_url = "AECCEB";
+google_color_text = "AECCEB";
+//--></script>
+<script type="text/javascript" src="04_key_presses_files/show_ads.js">
+</script>
+</div><a class="nav" href="http://lazyfoo.net/index.php">News</a>
+<a class="nav" href="http://lazyfoo.net/faq.php">FAQs</a>
+<!--<a class="nav" href="http://lazyfoo.net/games/index.php">Games</a>-->
+<a class="nav" href="http://lazyfoo.net/contact.php">Contact</a>
+<a class="nav" href="http://lazyfoo.net/donate.php">Donations</a>
+
+</div><script type="text/javascript">
+
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-32350292-1']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+
+</script>
+<!--Init facebook-->
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) return;
+  js = d.createElement(s); js.id = id;
+  js.src = "//connect.facebook.net/en_US/sdk.js#xfbml=1&version=v2.0";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+
+<!--Init twitter-->
+<script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src="https://platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs");</script>
+
+<!--Init google+-->
+<script src="04_key_presses_files/plusone.js"></script>
+</div>        
+        <div class="content">
+
+            <div class="tutPreface"><h1 class="tutHead">Key Presses</h1>
+            <div class="tutImg"><img src="04_key_presses_files/preview.png"></div>
+            <h6>Last Updated 3/18/17</h6>
+            Xing out the window is just one of the events SDL is capable
+ of handling. Another type of input used heavily in games is the 
+keyboard. In this tutorial we're going to
+            make different images appear depending on which key you 
+press.
+            </div>
+
+<div class="tutCode">//Key press surfaces constants
+enum KeyPressSurfaces
+{
+    KEY_PRESS_SURFACE_DEFAULT,
+    KEY_PRESS_SURFACE_UP,
+    KEY_PRESS_SURFACE_DOWN,
+    KEY_PRESS_SURFACE_LEFT,
+    KEY_PRESS_SURFACE_RIGHT,
+    KEY_PRESS_SURFACE_TOTAL
+};
+</div>
+
+<div class="tutText">
+Near the top of the source code we declare an enumeration of the 
+different surfaces we have. Enumerations are a shorthand way to do 
+symbolic constants instead of having to do
+const int KEY_PRESS_SURFACE_DEFAULT = 0; const int KEY_PRESS_SURFACE_UP =
+ 1; const int KEY_PRESS_SURFACE_DOWN = 2; and such. They default to 
+start counting at 0 and go up by one for
+each enumeration you declare. This means KEY_PRESS_SURFACE_DEFAULT is 0,
+ KEY_PRESS_SURFACE_UP is 1, KEY_PRESS_SURFACE_DOWN is 2, 
+KEY_PRESS_SURFACE_LEFT is 3,
+KEY_PRESS_SURFACE_RIGHT is 4, and KEY_PRESS_SURFACE_TOTAL is 5, It's 
+possible to give them explicit integer values, but we won't be covering 
+that here. A quick Google search on
+enumerations should cover that.<br>
+<br>
+One bad habit beginning programmers have is using abritary numbers 
+instead of symbolic constants. For example they'll have 1 mean main 
+menu, 2 mean options, etc which is fine for small
+programs. When you're dealing with thousands of lines of code (which 
+video games usually do), having a line that says "if( option == 1 )" 
+will produce much more headaches than using
+"if( option == MAIN_MENU )".
+</div>
+
+<div class="tutCode">//Starts up SDL and creates window
+bool init();
+
+//Loads media
+bool loadMedia();
+
+//Frees media and shuts down SDL
+void close();
+
+//Loads individual image
+SDL_Surface* loadSurface( std::string path );
+
+//The window we'll be rendering to
+SDL_Window* gWindow = NULL;
+    
+//The surface contained by the window
+SDL_Surface* gScreenSurface = NULL;
+
+//The images that correspond to a keypress
+SDL_Surface* gKeyPressSurfaces[ KEY_PRESS_SURFACE_TOTAL ];
+
+//Current displayed image
+SDL_Surface* gCurrentSurface = NULL;
+</div>
+
+<div class="tutText">
+Along with our usual function prototypes, we have a new function called 
+loadSurface. There's a general rule that if you're copy/pasting code, 
+you're doing something wrong. Rather
+than copy/paste loading code every time, we're going to use a function 
+to handle that.<br>
+<br>
+What's important to this specific program is that we have an array of 
+pointers to SDL surfaces called gKeyPressSurfaces to contain all the 
+images we'll be using. Depending on which
+key the user presses, we'll set gCurrentSurface (which is the image that
+ will be blitted to the screen) to one of these surfaces.
+</div>
+
+<div class="tutCode">SDL_Surface* loadSurface( std::string path )
+{
+    //Load image at specified path
+    SDL_Surface* loadedSurface = SDL_LoadBMP( path.c_str() );
+    if( loadedSurface == NULL )
+    {
+        printf( "Unable to load image %s! SDL Error: %s\n", path.c_str(), SDL_GetError() );
+    }
+
+    return loadedSurface;
+}
+</div>
+
+<div class="tutText">
+Here's the loadSurface function which loads an images and reports an 
+error if something goes wrong. It's pretty much that same as before, but
+ having the image loading and error
+reporting contained in one function makes it easy to add to and debug 
+image loading.<br>
+<br>
+And since I get this question a lot by new C++ programmers, no this 
+function does not leak memory. It does allocate memory to load a new SDL
+ surface and return it without freeing the
+allocated memory, but what would be the point of allocating the surface 
+and immediately deallocating it? What this function does is load the 
+surface and return the newly loaded
+surface so what ever called this function can deallocate it after it's 
+done using it. In this program, the loaded surface is deallocated in the
+ close function.
+</div>
+
+<div class="tutCode">bool loadMedia()
+{
+    //Loading success flag
+    bool success = true;
+
+    //Load default surface
+    gKeyPressSurfaces[ KEY_PRESS_SURFACE_DEFAULT ] = loadSurface( "04_key_presses/press.bmp" );
+    if( gKeyPressSurfaces[ KEY_PRESS_SURFACE_DEFAULT ] == NULL )
+    {
+        printf( "Failed to load default image!\n" );
+        success = false;
+    }
+
+    //Load up surface
+    gKeyPressSurfaces[ KEY_PRESS_SURFACE_UP ] = loadSurface( "04_key_presses/up.bmp" );
+    if( gKeyPressSurfaces[ KEY_PRESS_SURFACE_UP ] == NULL )
+    {
+        printf( "Failed to load up image!\n" );
+        success = false;
+    }
+
+    //Load down surface
+    gKeyPressSurfaces[ KEY_PRESS_SURFACE_DOWN ] = loadSurface( "04_key_presses/down.bmp" );
+    if( gKeyPressSurfaces[ KEY_PRESS_SURFACE_DOWN ] == NULL )
+    {
+        printf( "Failed to load down image!\n" );
+        success = false;
+    }
+
+    //Load left surface
+    gKeyPressSurfaces[ KEY_PRESS_SURFACE_LEFT ] = loadSurface( "04_key_presses/left.bmp" );
+    if( gKeyPressSurfaces[ KEY_PRESS_SURFACE_LEFT ] == NULL )
+    {
+        printf( "Failed to load left image!\n" );
+        success = false;
+    }
+
+    //Load right surface
+    gKeyPressSurfaces[ KEY_PRESS_SURFACE_RIGHT ] = loadSurface( "04_key_presses/right.bmp" );
+    if( gKeyPressSurfaces[ KEY_PRESS_SURFACE_RIGHT ] == NULL )
+    {
+        printf( "Failed to load right image!\n" );
+        success = false;
+    }
+
+    return success;
+}
+</div>
+
+<div class="tutText">
+Here in the loadMedia function we load all of the images we're going to render to the screen.
+</div>
+
+<div class="tutCode">            //Main loop flag
+            bool quit = false;
+
+            //Event handler
+            SDL_Event e;
+
+            //Set default current surface
+            gCurrentSurface = gKeyPressSurfaces[ KEY_PRESS_SURFACE_DEFAULT ];
+
+            //While application is running
+            while( !quit )
+            {
+</div>
+
+<div class="tutText">
+In the main function before entering the main loop, we set the default surface to display.
+</div>
+
+<div class="tutCode">                //Handle events on queue
+                while( SDL_PollEvent( &amp;e ) != 0 )
+                {
+                    //User requests quit
+                    if( e.type == SDL_QUIT )
+                    {
+                        quit = true;
+                    }
+                    //User presses a key
+                    else if( e.type == SDL_KEYDOWN )
+                    {
+                        //Select surfaces based on key press
+                        switch( e.key.keysym.sym )
+                        {
+                            case SDLK_UP:
+                            gCurrentSurface = gKeyPressSurfaces[ KEY_PRESS_SURFACE_UP ];
+                            break;
+
+                            case SDLK_DOWN:
+                            gCurrentSurface = gKeyPressSurfaces[ KEY_PRESS_SURFACE_DOWN ];
+                            break;
+
+                            case SDLK_LEFT:
+                            gCurrentSurface = gKeyPressSurfaces[ KEY_PRESS_SURFACE_LEFT ];
+                            break;
+
+                            case SDLK_RIGHT:
+                            gCurrentSurface = gKeyPressSurfaces[ KEY_PRESS_SURFACE_RIGHT ];
+                            break;
+
+                            default:
+                            gCurrentSurface = gKeyPressSurfaces[ KEY_PRESS_SURFACE_DEFAULT ];
+                            break;
+                        }
+                    }
+                }
+</div>
+
+<div class="tutText">
+Here is our event loop. As you can see handle <a class="tutLink" href="http://lazyfoo.net/tutorials/SDL/03_event_driven_programming/index.php">closing the window</a> as we did in the previous tutorial, then we
+handle an SDL_KEYDOWN event. This event happens when ever you press a key on the keyboard.<br>
+<br>
+Inside of the 
+<a class="tutLink" href="http://wiki.libsdl.org/SDL_Event?highlight=%28\bCategoryStruct\b%29|%28CategoryEvents%29">SDL Event</a> is an
+<a class="tutLink" href="http://wiki.libsdl.org/SDL_KeyboardEvent">SDL Keyboard event</a> which contains the information for the key event. 
+
+Inside of that is a 
+<a class="tutLink" href="http://wiki.libsdl.org/SDL_Keysym">SDL Keysym</a> which contains the information about the key that was pressed.
+
+That Keysym contains the 
+<a class="tutLink" href="http://wiki.libsdl.org/SDL_Keycode">SDL Keycode</a> which identifies the key that was pressed.<br>
+<br>
+As you can see, what this code does is set the surfaces based on which 
+key was pressed. Look in the SDL documentation if you want to see what 
+the other keycodes are for other keys.
+</div>
+
+<div class="tutCode">                //Apply the current image
+                SDL_BlitSurface( gCurrentSurface, NULL, gScreenSurface, NULL );
+            
+                //Update the surface
+                SDL_UpdateWindowSurface( gWindow );
+</div>
+
+<div class="tutText">
+After the keys have been handled and the surface has been set we blit the selected surface to the screen.
+</div>
+
+            <div class="tutFooter">
+            Download the media and source code for this tutorial <a class="tutLink" href="http://lazyfoo.net/tutorials/SDL/04_key_presses/04_key_presses.zip">here</a>.<br>
+            <br>
+            <a class="leftNav" href="http://lazyfoo.net/tutorials/SDL/index.php#Key%20Presses">Back to SDL Tutorials</a><br>
+            </div>
+
+        </div>
+
+        <div class="footer">
+
+<div style="text-align: center;">
+<!--Facebook-->
+<span style="line-height: 10px;" class="fb-share-button" data-href="http://lazyfoo.net/" data-type="button_count"></span>
+
+<!--Google+-->
+<g:plus action="share" annotation="bubble" height="20" href="http://lazyfoo.net/"></g:plus>
+
+<!--Twitter-->
+<a style="line-height: 0px;" href="https://twitter.com/share" class="twitter-share-button" data-lang="en">Tweet</a>
+
+</div>
+<div class="nav">
+<a class="nav" href="http://forums.libsdl.org/">SDL Forums</a>
+<a class="nav" href="http://lazyfoo.net/tutorials/SDL/index.php">SDL Tutorials</a>
+<a class="nav" href="http://lazyfoo.net/articles/index.php">Articles</a>
+<a class="nav" href="http://lazyfoo.net/tutorials/OpenGL/index.php">OpenGL Tutorials</a>
+<a class="nav" href="http://www.opengl.org/discussion_boards/forum.php">OpenGL Forums</a>
+<div class="ads">
+<script type="text/javascript"><!--
+google_ad_client = "pub-5880704953225255";
+google_ad_width = 468;
+google_ad_height = 60;
+google_ad_format = "468x60_as";
+google_ad_type = "text_image";
+google_ad_channel ="";
+google_color_border = "6699CC";
+google_color_bg = "003366";
+google_color_link = "FFFFFF";
+google_color_url = "AECCEB";
+google_color_text = "AECCEB";
+//--></script>
+<script type="text/javascript" src="04_key_presses_files/show_ads.js">
+</script>
+</div><a class="nav" href="http://lazyfoo.net/index.php">News</a>
+<a class="nav" href="http://lazyfoo.net/faq.php">FAQs</a>
+<!--<a class="nav" href="http://lazyfoo.net/games/index.php">Games</a>-->
+<a class="nav" href="http://lazyfoo.net/contact.php">Contact</a>
+<a class="nav" href="http://lazyfoo.net/donate.php">Donations</a>
+
+</div>
+<h6>
+Copyright Lazy Foo' Productions 2004-2017
+</h6>
+
+</div>
+    
+
+</body></html>

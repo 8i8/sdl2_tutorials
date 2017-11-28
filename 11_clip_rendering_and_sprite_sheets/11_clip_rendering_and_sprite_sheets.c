@@ -1,23 +1,17 @@
 /*
- * This program loads a single image as a sprite sheet, then creates a
- * rectangle 'clip' for each of sprite, to display seperatly, using
- * SDL_RenderCopy()
+ * Clip Rendering and Sprite Sheets
  *
- * https://wiki.libsdl.org/SDL_RenderCopy
- *
- * The texture is blended with the destination based on its blend mode set with
- * SDL_SetTextureBlendMode().
- * The texture color is affected based on its color modulation set by
- * SDL_SetTextureColorMod().
- * The texture alpha is affected based on its alpha modulation set by
- * SDL_SetTextureAlphaMod(). 
+ * Sometimes you only want to render part of a texture. A lot of times games
+ * like to keep multiple images on the same sprite sheet as opposed to having a
+ * bunch of textures. Using clip rendering, we can define a portion of the
+ * texture to render as opposed to rendering the whole thing. 
  */
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
 #include <stdio.h>
 
-const int SCREEN_WIDTH = 640;
-const int SCREEN_HEIGHT = 480;
+#define SCREEN_WIDTH	640
+#define SCREEN_HEIGHT	480
 
 typedef struct {
 	SDL_Texture *mTexture;
@@ -27,6 +21,13 @@ typedef struct {
 
 SDL_Window* gWindow = NULL;
 SDL_Renderer* gRenderer = NULL;
+
+/*
+ * For this tutorial, we're going to take this sprite sheet and render each
+ * sprite in a different corner; So we're going to need a texture image and 4
+ * rectangles to define the sprites, which are the variables you see declared
+ * here.
+ */
 SDL_Rect gSpriteClips[4];
 LTexture gSpriteSheetTexture;
 
@@ -121,6 +122,19 @@ short loadFromFile(LTexture *lt, char *path)
 	return 0;
 }
 
+/*
+ * Here is the new rendering function for the texture class that supports clip
+ * rendering. It's mostly the same as the previous texture rendering function
+ * but with two changes.
+ * First, since when you're clipping and you're using the dimensions of the
+ * clip rectangle instead of the texture, we're going to set the width/height
+ * of the destination rectangle (here called renderQuad) to the size of the
+ * clip rectangle.
+ * Secondly, we're going to pass in the clip rectangle to SDL_RenderCopy as the
+ * source rectangle. The source rectangle defines what part of the texture you
+ * want to render. When the source rectangle is NULL, the whole texture is
+ * rendered.
+ */
 short render(LTexture *lt, int x, int y, SDL_Rect* clip)
 {
 	SDL_Rect renderQuad = {x, y, lt->mWidth, lt->mHeight};
@@ -133,16 +147,10 @@ short render(LTexture *lt, int x, int y, SDL_Rect* clip)
 	return SDL_RenderCopy(gRenderer, lt->mTexture, clip, &renderQuad);
 }
 
-int LTexture_getWidth(LTexture *lt)
-{
-	return lt->mWidth;
-}
-
-int LTexture_getHeight(LTexture *lt)
-{
-	return lt->mHeight;
-}
-
+/*
+ * The media loading function loads the texture and then defines the clip
+ * rectangles for the circle sprites if the texture loaded successfully.
+ */
 short loadMedia()
 {
 	if(loadFromFile(&gSpriteSheetTexture, "dots.png"))
@@ -202,7 +210,11 @@ int main(int argc, char* argv[])
 
 		SDL_SetRenderDrawColor(gRenderer, 0xFF, 0xFF, 0xFF, 0xFF);
 		SDL_RenderClear(gRenderer);
-
+/*
+ * Finally here in the main loop we render the same texture 4 times, but we're
+ * rendering a different portion of the sprite sheet in different places each
+ * call. 
+ */
 		render(
 				&gSpriteSheetTexture,
 				0,

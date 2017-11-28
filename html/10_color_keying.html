@@ -1,0 +1,459 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+<html><head>
+
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+        <meta name="KEYWORDS" content="C++ SDL 2 Tutorial 2D Windows Linux Mac SDL color keying transparent backgrounds">
+        <meta name="DESCRIPTION" content="Render images with transparent backgrounds using color keying">
+
+        <title>Lazy Foo' Productions - Color Keying</title>
+
+        <link rel="stylesheet" type="text/css" href="10_color_keying_files/lazy.css">
+
+    </head>
+
+    <body>
+
+        <div class="header">
+
+<h1 style="margin-bottom:0px;padding-bottom:0px;border-bottom:0px;">Lazy Foo' Productions</h1>
+<div class="nav">
+<a class="nav" href="http://forums.libsdl.org/">SDL Forums</a>
+<a class="nav" href="http://lazyfoo.net/tutorials/SDL/index.php">SDL Tutorials</a>
+<a class="nav" href="http://lazyfoo.net/articles/index.php">Articles</a>
+<a class="nav" href="http://lazyfoo.net/tutorials/OpenGL/index.php">OpenGL Tutorials</a>
+<a class="nav" href="http://www.opengl.org/discussion_boards/forum.php">OpenGL Forums</a>
+<div class="ads">
+<script id="twitter-wjs" src="10_color_keying_files/widgets.js"></script><script id="facebook-jssdk" src="10_color_keying_files/sdk.js"></script><script type="text/javascript" async="" src="10_color_keying_files/ga.js"></script><script type="text/javascript"><!--
+google_ad_client = "pub-5880704953225255";
+google_ad_width = 468;
+google_ad_height = 60;
+google_ad_format = "468x60_as";
+google_ad_type = "text_image";
+google_ad_channel ="";
+google_color_border = "6699CC";
+google_color_bg = "003366";
+google_color_link = "FFFFFF";
+google_color_url = "AECCEB";
+google_color_text = "AECCEB";
+//--></script>
+<script type="text/javascript" src="10_color_keying_files/show_ads.js">
+</script>
+</div><a class="nav" href="http://lazyfoo.net/index.php">News</a>
+<a class="nav" href="http://lazyfoo.net/faq.php">FAQs</a>
+<!--<a class="nav" href="http://lazyfoo.net/games/index.php">Games</a>-->
+<a class="nav" href="http://lazyfoo.net/contact.php">Contact</a>
+<a class="nav" href="http://lazyfoo.net/donate.php">Donations</a>
+
+</div><script type="text/javascript">
+
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-32350292-1']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+
+</script>
+<!--Init facebook-->
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) return;
+  js = d.createElement(s); js.id = id;
+  js.src = "//connect.facebook.net/en_US/sdk.js#xfbml=1&version=v2.0";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+
+<!--Init twitter-->
+<script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src="https://platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs");</script>
+
+<!--Init google+-->
+<script src="10_color_keying_files/plusone.js"></script>
+</div>        
+        <div class="content">
+
+            <div class="tutPreface"><h1 class="tutHead">Color Keying</h1>
+            <div class="tutImg"><img src="10_color_keying_files/preview.png"></div>
+            <h6>Last Updated 7/13/14</h6>
+            When rendering multiple images on the screen, having images 
+with transparent backgrounds is usually necessary. Fortunately SDL 
+provides an easy way to do this using
+            color keying.
+            </div>
+
+<div class="tutCode">//Texture wrapper class
+class LTexture
+{
+    public:
+        //Initializes variables
+        LTexture();
+
+        //Deallocates memory
+        ~LTexture();
+
+        //Loads image at specified path
+        bool loadFromFile( std::string path );
+
+        //Deallocates texture
+        void free();
+
+        //Renders texture at given point
+        void render( int x, int y );
+
+        //Gets image dimensions
+        int getWidth();
+        int getHeight();
+
+    private:
+        //The actual hardware texture
+        SDL_Texture* mTexture;
+
+        //Image dimensions
+        int mWidth;
+        int mHeight;
+};
+</div>
+
+<div class="tutText">
+For this tutorial we're going to wrap the SDL_Texture in a class to make
+ some things easier. For example, if you want to get certain information
+ about the texture such as its
+width or height you would have to use some SDL functions to query the 
+information for the texture. Instead what we're going to do is use a 
+class to wrap and store the information
+about the texture.<br>
+<br>
+It's a fairly straight forward class in terms of design. It has a 
+constructor/destructor pair, a file loader, a deallocator, a renderer 
+that takes in a position, and 
+functions to get the texture's dimensions. For member variables, it has 
+the texture we're going to wrap, and variables to store the 
+width/height.
+</div>
+
+
+<div class="tutCode">//The window we'll be rendering to
+SDL_Window* gWindow = NULL;
+
+//The window renderer
+SDL_Renderer* gRenderer = NULL;
+
+//Scene textures
+LTexture gFooTexture;
+LTexture gBackgroundTexture;
+</div>
+
+<div class="tutText">
+For this scene there's two textures we're going to load here declared as
+ "gFooTexture" and "gBackgroundTexture". We're going to take this foo' 
+texture:
+<div class="tutImg"><img src="10_color_keying_files/foo.png"></div>
+<br>
+Color key the cyan (light blue) colored background and render it on top of this background:<br>
+<div class="tutImg"><img src="10_color_keying_files/background.png"></div>
+</div>
+
+
+<div class="tutCode">LTexture::LTexture()
+{
+    //Initialize
+    mTexture = NULL;
+    mWidth = 0;
+    mHeight = 0;
+}
+
+LTexture::~LTexture()
+{
+    //Deallocate
+    free();
+}
+</div>
+
+<div class="tutText">
+The constructor initializes variables and the destructor calls the deallocator which we'll cover later. 
+</div>
+
+
+<div class="tutCode">bool LTexture::loadFromFile( std::string path )
+{
+    //Get rid of preexisting texture
+    free();
+</div>
+
+<div class="tutText">
+The texture loading function pretty much works like it did in the <a class="tutLink" href="http://lazyfoo.net/tutorials/SDL/07_texture_loading_and_rendering/index.php">texture loading tutorial</a> but with some small but
+important tweaks. First off we deallocate the texture in case there's one that's already loaded.
+</div>
+
+<div class="tutCode">    //The final texture
+    SDL_Texture* newTexture = NULL;
+
+    //Load image at specified path
+    SDL_Surface* loadedSurface = IMG_Load( path.c_str() );
+    if( loadedSurface == NULL )
+    {
+        printf( "Unable to load image %s! SDL_image Error: %s\n", path.c_str(), IMG_GetError() );
+    }
+    else
+    {
+        //Color key image
+        SDL_SetColorKey( loadedSurface, SDL_TRUE, SDL_MapRGB( loadedSurface-&gt;format, 0, 0xFF, 0xFF ) );
+</div>
+
+<div class="tutText">
+Next, we color key the image with <a class="tutLink" href="http://wiki.libsdl.org/SDL_SetColorKey">SDL_SetColorKey</a>
+ before creating a texture from it. The first argument is the surface we
+ want
+to color key, the second argument covers whether we want to enable color
+ keying, and the last argument is the pixel we want to color key with.<br>
+<br>
+The most cross platform way to create a pixel from RGB color is with <a class="tutLink" href="http://wiki.libsdl.org/SDL_MapRGB">SDL_MapRGB</a>.
+ The first argument is the format we
+want the pixel in. Fortunately the loaded surface has a format member 
+variable. The last three variables are the red, green, and blue 
+components for color you want to map. Here
+we're mapping cyan which is red 0, green 255, blue 255.
+</div>
+
+<div class="tutCode">        //Create texture from surface pixels
+        newTexture = SDL_CreateTextureFromSurface( gRenderer, loadedSurface );
+        if( newTexture == NULL )
+        {
+            printf( "Unable to create texture from %s! SDL Error: %s\n", path.c_str(), SDL_GetError() );
+        }
+        else
+        {
+            //Get image dimensions
+            mWidth = loadedSurface-&gt;w;
+            mHeight = loadedSurface-&gt;h;
+        }
+
+        //Get rid of old loaded surface
+        SDL_FreeSurface( loadedSurface );
+    }
+
+    //Return success
+    mTexture = newTexture;
+    return mTexture != NULL;
+}
+</div>
+
+<div class="tutText">
+After color keying the loaded surface, we create a texture from the 
+loaded and color keyed surface. If the texture was created successfully,
+ we store the width/height of the texture
+and return whether the texture loaded success fully.
+</div>
+
+
+<div class="tutCode">void LTexture::free()
+{
+    //Free texture if it exists
+    if( mTexture != NULL )
+    {
+        SDL_DestroyTexture( mTexture );
+        mTexture = NULL;
+        mWidth = 0;
+        mHeight = 0;
+    }
+}
+</div>
+
+<div class="tutText">
+The deallocator simply checks if a texture exists, destroys it, and reinitializes the member variables.
+</div>
+
+
+<div class="tutCode">void LTexture::render( int x, int y )
+{
+    //Set rendering space and render to screen
+    SDL_Rect renderQuad = { x, y, mWidth, mHeight };
+    SDL_RenderCopy( gRenderer, mTexture, NULL, &amp;renderQuad );
+}
+</div>
+
+<div class="tutText">
+Here you see why we needed a wrapper class. Up until now, we've been 
+pretty much been rendering full screen images so we didn't need to 
+specify position. Because we didn't need to
+specify position, we just called SDL_RenderCopy with the last two 
+arguments as NULL.<br>
+<br>
+When rendering a texture in a certain place, you to specify a 
+destination rectangle that sets the x/y position and width/height. We 
+can't specify the width/height without knowing
+the original image's dimensions. So here when we render our texture we 
+create a rectangle with the position arguments and the member 
+width/height, and pass in this rectangle to 
+SDL_RenderCopy.
+</div>
+
+
+<div class="tutCode">int LTexture::getWidth()
+{
+    return mWidth;
+}
+
+int LTexture::getHeight()
+{
+    return mHeight;
+}
+</div>
+
+<div class="tutText">
+These last member functions allows us to get the width/height when we need them.
+</div>
+
+
+<div class="tutCode">bool loadMedia()
+{
+    //Loading success flag
+    bool success = true;
+
+    //Load Foo' texture
+    if( !gFooTexture.loadFromFile( "10_color_keying/foo.png" ) )
+    {
+        printf( "Failed to load Foo' texture image!\n" );
+        success = false;
+    }
+    
+    //Load background texture
+    if( !gBackgroundTexture.loadFromFile( "10_color_keying/background.png" ) )
+    {
+        printf( "Failed to load background texture image!\n" );
+        success = false;
+    }
+
+    return success;
+}
+</div>
+
+<div class="tutText">
+Here are the image loading functions in action.
+</div>
+
+
+<div class="tutCode">void close()
+{
+    //Free loaded images
+    gFooTexture.free();
+    gBackgroundTexture.free();
+
+    //Destroy window    
+    SDL_DestroyRenderer( gRenderer );
+    SDL_DestroyWindow( gWindow );
+    gWindow = NULL;
+    gRenderer = NULL;
+
+    //Quit SDL subsystems
+    IMG_Quit();
+    SDL_Quit();
+}
+</div>
+
+<div class="tutText">
+And here are the deallocators.
+</div>
+
+
+<div class="tutCode">            //While application is running
+            while( !quit )
+            {
+                //Handle events on queue
+                while( SDL_PollEvent( &amp;e ) != 0 )
+                {
+                    //User requests quit
+                    if( e.type == SDL_QUIT )
+                    {
+                        quit = true;
+                    }
+                }
+
+                //Clear screen
+                SDL_SetRenderDrawColor( gRenderer, 0xFF, 0xFF, 0xFF, 0xFF );
+                SDL_RenderClear( gRenderer );
+
+                //Render background texture to screen
+                gBackgroundTexture.render( 0, 0 );
+
+                //Render Foo' to the screen
+                gFooTexture.render( 240, 190 );
+
+                //Update screen
+                SDL_RenderPresent( gRenderer );
+            }
+</div>
+
+<div class="tutText">
+Here is the main loop with our textures rendering. It's a basic loop 
+that handles events, clears the screen, renders the background, renders 
+the stick figure on top of it,
+and updates the screen.<br>
+<br>
+An important thing to note is that order matters when you're rendering 
+multiple things to the screen every frame. If we to render the stick 
+figure first, the background will
+render over it and you won't be able to see the stick figure.
+</div>
+
+            <div class="tutFooter">
+            Download the media and source code for this tutorial <a class="tutLink" href="http://lazyfoo.net/tutorials/SDL/10_color_keying/10_color_keying.zip">here</a>.<br>
+            <br>
+            <a class="leftNav" href="http://lazyfoo.net/tutorials/SDL/index.php#Color%20Keying">Back to SDL Tutorials</a><br>
+            </div>
+
+        </div>
+
+        <div class="footer">
+
+<div style="text-align: center;">
+<!--Facebook-->
+<span style="line-height: 10px;" class="fb-share-button" data-href="http://lazyfoo.net/" data-type="button_count"></span>
+
+<!--Google+-->
+<g:plus action="share" annotation="bubble" height="20" href="http://lazyfoo.net/"></g:plus>
+
+<!--Twitter-->
+<a style="line-height: 0px;" href="https://twitter.com/share" class="twitter-share-button" data-lang="en">Tweet</a>
+
+</div>
+<div class="nav">
+<a class="nav" href="http://forums.libsdl.org/">SDL Forums</a>
+<a class="nav" href="http://lazyfoo.net/tutorials/SDL/index.php">SDL Tutorials</a>
+<a class="nav" href="http://lazyfoo.net/articles/index.php">Articles</a>
+<a class="nav" href="http://lazyfoo.net/tutorials/OpenGL/index.php">OpenGL Tutorials</a>
+<a class="nav" href="http://www.opengl.org/discussion_boards/forum.php">OpenGL Forums</a>
+<div class="ads">
+<script type="text/javascript"><!--
+google_ad_client = "pub-5880704953225255";
+google_ad_width = 468;
+google_ad_height = 60;
+google_ad_format = "468x60_as";
+google_ad_type = "text_image";
+google_ad_channel ="";
+google_color_border = "6699CC";
+google_color_bg = "003366";
+google_color_link = "FFFFFF";
+google_color_url = "AECCEB";
+google_color_text = "AECCEB";
+//--></script>
+<script type="text/javascript" src="10_color_keying_files/show_ads.js">
+</script>
+</div><a class="nav" href="http://lazyfoo.net/index.php">News</a>
+<a class="nav" href="http://lazyfoo.net/faq.php">FAQs</a>
+<!--<a class="nav" href="http://lazyfoo.net/games/index.php">Games</a>-->
+<a class="nav" href="http://lazyfoo.net/contact.php">Contact</a>
+<a class="nav" href="http://lazyfoo.net/donate.php">Donations</a>
+
+</div>
+<h6>
+Copyright Lazy Foo' Productions 2004-2017
+</h6>
+
+</div>
+    
+
+</body></html>

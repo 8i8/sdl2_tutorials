@@ -31,7 +31,7 @@ int gData = -1;
 short init()
 {
 	if(SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER) < 0) {
-		SDL_Log("%s(), SDL_Init failed.", __func__);
+		SDL_Log("%s(), SDL_Init failed. %s", __func__, SDL_GetError());
 		return -1;
 	}
 
@@ -96,8 +96,6 @@ short LTexture_loadFromFile(LTexture *lt, char *path)
 					loadedSurface,
 					SDL_PIXELFORMAT_RGBA8888,
 					SDL_SWSURFACE);
-
-	SDL_Surface *gScreenSurface = SDL_GetWindowSurface(gWindow);
 
 	if(formattedSurface == NULL) {
 		SDL_Log("%s(), SDL_ConvertSurfaceFormat failed.", __func__);

@@ -1,0 +1,441 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+<html><head>
+
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+        <meta name="KEYWORDS" content="C++ SDL 2 Tutorial 2D Windows Linux Mac start stop pause unpause timers">
+        <meta name="DESCRIPTION" content="Start, stop, pause, and unpause timers with SDL 2">
+
+        <title>Lazy Foo' Productions - Advanced Timers</title>
+
+        <link rel="stylesheet" type="text/css" href="23_advanced_timers_files/lazy.css">
+
+    </head>
+
+    <body>
+
+        <div class="header">
+
+<h1 style="margin-bottom:0px;padding-bottom:0px;border-bottom:0px;">Lazy Foo' Productions</h1>
+<div class="nav">
+<a class="nav" href="http://forums.libsdl.org/">SDL Forums</a>
+<a class="nav" href="http://lazyfoo.net/tutorials/SDL/index.php">SDL Tutorials</a>
+<a class="nav" href="http://lazyfoo.net/articles/index.php">Articles</a>
+<a class="nav" href="http://lazyfoo.net/tutorials/OpenGL/index.php">OpenGL Tutorials</a>
+<a class="nav" href="http://www.opengl.org/discussion_boards/forum.php">OpenGL Forums</a>
+<div class="ads">
+<script id="twitter-wjs" src="23_advanced_timers_files/widgets.js"></script><script id="facebook-jssdk" src="23_advanced_timers_files/sdk.js"></script><script type="text/javascript" async="" src="23_advanced_timers_files/ga.js"></script><script type="text/javascript"><!--
+google_ad_client = "pub-5880704953225255";
+google_ad_width = 468;
+google_ad_height = 60;
+google_ad_format = "468x60_as";
+google_ad_type = "text_image";
+google_ad_channel ="";
+google_color_border = "6699CC";
+google_color_bg = "003366";
+google_color_link = "FFFFFF";
+google_color_url = "AECCEB";
+google_color_text = "AECCEB";
+//--></script>
+<script type="text/javascript" src="23_advanced_timers_files/show_ads.js">
+</script>
+</div><a class="nav" href="http://lazyfoo.net/index.php">News</a>
+<a class="nav" href="http://lazyfoo.net/faq.php">FAQs</a>
+<!--<a class="nav" href="http://lazyfoo.net/games/index.php">Games</a>-->
+<a class="nav" href="http://lazyfoo.net/contact.php">Contact</a>
+<a class="nav" href="http://lazyfoo.net/donate.php">Donations</a>
+
+</div><script type="text/javascript">
+
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-32350292-1']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+
+</script>
+<!--Init facebook-->
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) return;
+  js = d.createElement(s); js.id = id;
+  js.src = "//connect.facebook.net/en_US/sdk.js#xfbml=1&version=v2.0";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+
+<!--Init twitter-->
+<script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src="https://platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs");</script>
+
+<!--Init google+-->
+<script src="23_advanced_timers_files/plusone.js"></script>
+</div>        
+        <div class="content">
+
+            <div class="tutPreface"><h1 class="tutHead">Advanced Timers</h1>
+            <div class="tutImg"><img src="23_advanced_timers_files/preview.png"></div>
+            <h6>Last Updated 3/16/14</h6>
+            Now that've made a <a class="tutLink" href="http://lazyfoo.net/tutorials/SDL/22_timing/index.php">basic timer with SDL</a>, it's time to make one that can start/stop/pause.
+            </div>
+           
+           
+<div class="tutCode">//The application time based timer
+class LTimer
+{
+    public:
+        //Initializes variables
+        LTimer();
+
+        //The various clock actions
+        void start();
+        void stop();
+        void pause();
+        void unpause();
+
+        //Gets the timer's time
+        Uint32 getTicks();
+
+        //Checks the status of the timer
+        bool isStarted();
+        bool isPaused();
+
+    private:
+        //The clock time when the timer started
+        Uint32 mStartTicks;
+
+        //The ticks stored when the timer was paused
+        Uint32 mPausedTicks;
+
+        //The timer status
+        bool mPaused;
+        bool mStarted;
+};
+</div>
+
+<div class="tutText">
+For these new features, we're going to make a timer class. It has all 
+the basic function to start/stop/pause/unpause the timer and check its 
+status. In terms of data members, 
+we have the start time like before, a variable to store the time when 
+paused, and status flags to keep track of whether the timer is running 
+or paused.
+</div>
+
+
+<div class="tutCode">LTimer::LTimer()
+{
+    //Initialize the variables
+    mStartTicks = 0;
+    mPausedTicks = 0;
+
+    mPaused = false;
+    mStarted = false;
+}
+
+</div>
+
+<div class="tutText">Our constructor initializes the internal data members. 
+</div>
+
+
+<div class="tutCode">void LTimer::start()
+{
+    //Start the timer
+    mStarted = true;
+
+    //Unpause the timer
+    mPaused = false;
+
+    //Get the current clock time
+    mStartTicks = SDL_GetTicks();
+    mPausedTicks = 0;
+}
+</div>
+
+<div class="tutText">The start function sets the started and paused 
+flags, gets the timer's start time and initializes the pause time to 0. 
+For this
+timer, if we want to restart it we just call start again. Since we can 
+start the timer if it is paused and/or running, we should make sure to 
+clear out the paused data.
+</div>
+
+
+<div class="tutCode">void LTimer::stop()
+{
+    //Stop the timer
+    mStarted = false;
+
+    //Unpause the timer
+    mPaused = false;
+
+    //Clear tick variables
+    mStartTicks = 0;
+    mPausedTicks = 0;
+}
+</div>
+
+<div class="tutText">
+The stop function basically reinitializes all the variables.
+</div>
+
+
+<div class="tutCode">void LTimer::pause()
+{
+    //If the timer is running and isn't already paused
+    if( mStarted &amp;&amp; !mPaused )
+    {
+        //Pause the timer
+        mPaused = true;
+
+        //Calculate the paused ticks
+        mPausedTicks = SDL_GetTicks() - mStartTicks;
+        mStartTicks = 0;
+    }
+}
+</div>
+
+<div class="tutText">
+When pausing, we want to check if the timer is running because it 
+doesn't make sense to pause a timer that hasn't started. If the timer is
+ running, we set the pause flag, store the
+time when the timer was paused in mPausedTicks, and reset the start 
+time. 
+</div>
+
+
+<div class="tutCode">void LTimer::unpause()
+{
+    //If the timer is running and paused
+    if( mStarted &amp;&amp; mPaused )
+    {
+        //Unpause the timer
+        mPaused = false;
+
+        //Reset the starting ticks
+        mStartTicks = SDL_GetTicks() - mPausedTicks;
+
+        //Reset the paused ticks
+        mPausedTicks = 0;
+    }
+}
+</div>
+
+<div class="tutText">
+So when we unpause the timer, we want to make sure the timer is running 
+and paused because we can't unpause a timer that's stopped or running. 
+We set the paused flag to false and
+set the new start time.<br>
+<br>
+Say if you start the timer when SDL_GetTicks() reports 5000 ms and then 
+you pause it at 10000ms. This means the relative time at the time of 
+pausing is 5000ms. If we were to unpause
+it when SDL_GetTicks was at 20000, the new start time would be 20000 - 
+5000ms or 15000ms. This way the relative time will still be 5000ms away 
+from the current SDL_GetTicks time.
+</div>
+
+<div class="tutCode">Uint32 LTimer::getTicks()
+{
+    //The actual timer time
+    Uint32 time = 0;
+
+    //If the timer is running
+    if( mStarted )
+    {
+        //If the timer is paused
+        if( mPaused )
+        {
+            //Return the number of ticks when the timer was paused
+            time = mPausedTicks;
+        }
+        else
+        {
+            //Return the current time minus the start time
+            time = SDL_GetTicks() - mStartTicks;
+        }
+    }
+
+    return time;
+}
+</div>
+
+<div class="tutText">
+Getting the time is a little bit tricky since our timer can be running, 
+paused, or stopped. If the timer is stopped, we just return the initial 0
+ value. If the timer is paused, we
+return the time stored when paused. If the timer is running and not 
+paused, we return the time relative to when it started.
+</div>
+
+
+<div class="tutCode">bool LTimer::isStarted()
+{
+    //Timer is running and paused or unpaused
+    return mStarted;
+}
+
+bool LTimer::isPaused()
+{
+    //Timer is running and paused
+    return mPaused &amp;&amp; mStarted;
+}
+</div>
+
+<div class="tutText">
+Here we have some acccessor functions to check the status of the timer.
+</div>
+
+
+<div class="tutCode">            //Main loop flag
+            bool quit = false;
+
+            //Event handler
+            SDL_Event e;
+
+            //Set text color as black
+            SDL_Color textColor = { 0, 0, 0, 255 };
+
+            //The application timer
+            LTimer timer;
+
+            //In memory text stream
+            std::stringstream timeText;
+</div>
+
+<div class="tutText">
+Before we enter the main loop, we declare a timer object and a string stream to turn the time value into text.
+</div>
+
+
+<div class="tutCode">                    else if( e.type == SDL_KEYDOWN )
+                    {
+                        //Start/stop
+                        if( e.key.keysym.sym == SDLK_s )
+                        {
+                            if( timer.isStarted() )
+                            {
+                                timer.stop();
+                            }
+                            else
+                            {
+                                timer.start();
+                            }
+                        }
+                        //Pause/unpause
+                        else if( e.key.keysym.sym == SDLK_p )
+                        {
+                            if( timer.isPaused() )
+                            {
+                                timer.unpause();
+                            }
+                            else
+                            {
+                                timer.pause();
+                            }
+                        }
+                    }
+</div>
+
+<div class="tutText">
+When we press s key, we check if the timer is started. If it is, we stop
+ it. If it isn't, we start it. When we press p, we check if the timer is
+ paused. If it is, we unpause it.
+Otherwise we pause it.
+</div>
+                    
+
+<div class="tutCode">                //Set text to be rendered
+                timeText.str( "" );
+                timeText &lt;&lt; "Seconds since start time " &lt;&lt; ( timer.getTicks() / 1000.f ) ; 
+
+                //Render text
+                if( !gTimeTextTexture.loadFromRenderedText( timeText.str().c_str(), textColor ) )
+                {
+                    printf( "Unable to render time texture!\n" );
+                }
+
+                //Clear screen
+                SDL_SetRenderDrawColor( gRenderer, 0xFF, 0xFF, 0xFF, 0xFF );
+                SDL_RenderClear( gRenderer );
+
+                //Render textures
+                gStartPromptTexture.render( ( SCREEN_WIDTH - gStartPromptTexture.getWidth() ) / 2, 0 );
+                gPausePromptTexture.render( ( SCREEN_WIDTH - gPausePromptTexture.getWidth() ) / 2, gStartPromptTexture.getHeight() );
+                gTimeTextTexture.render( ( SCREEN_WIDTH - gTimeTextTexture.getWidth() ) / 2, ( SCREEN_HEIGHT - gTimeTextTexture.getHeight() ) / 2 );
+
+                //Update screen
+                SDL_RenderPresent( gRenderer );
+</div>
+
+<div class="tutText">
+Before we render, we write the current time to a string stream. The 
+reason we divide it by 1000 is because we want seconds and there are 
+1000 milliseconds per second.<br>
+<br>
+After that we render the text to a texture and then finally draw all the textures to the screen.
+</div>
+
+
+
+            <div class="tutFooter">
+            Download the media and source code for this tutorial <a class="tutLink" href="http://lazyfoo.net/tutorials/SDL/23_advanced_timers/23_advanced_timers.zip">here</a>.<br>
+            <br>
+            <a class="leftNav" href="http://lazyfoo.net/tutorials/SDL/index.php#Advanced%20Timers">Back to SDL Tutorials</a><br>
+            </div>
+
+        </div>
+
+        <div class="footer">
+
+<div style="text-align: center;">
+<!--Facebook-->
+<span style="line-height: 10px;" class="fb-share-button" data-href="http://lazyfoo.net/" data-type="button_count"></span>
+
+<!--Google+-->
+<g:plus action="share" annotation="bubble" height="20" href="http://lazyfoo.net/"></g:plus>
+
+<!--Twitter-->
+<a style="line-height: 0px;" href="https://twitter.com/share" class="twitter-share-button" data-lang="en">Tweet</a>
+
+</div>
+<div class="nav">
+<a class="nav" href="http://forums.libsdl.org/">SDL Forums</a>
+<a class="nav" href="http://lazyfoo.net/tutorials/SDL/index.php">SDL Tutorials</a>
+<a class="nav" href="http://lazyfoo.net/articles/index.php">Articles</a>
+<a class="nav" href="http://lazyfoo.net/tutorials/OpenGL/index.php">OpenGL Tutorials</a>
+<a class="nav" href="http://www.opengl.org/discussion_boards/forum.php">OpenGL Forums</a>
+<div class="ads">
+<script type="text/javascript"><!--
+google_ad_client = "pub-5880704953225255";
+google_ad_width = 468;
+google_ad_height = 60;
+google_ad_format = "468x60_as";
+google_ad_type = "text_image";
+google_ad_channel ="";
+google_color_border = "6699CC";
+google_color_bg = "003366";
+google_color_link = "FFFFFF";
+google_color_url = "AECCEB";
+google_color_text = "AECCEB";
+//--></script>
+<script type="text/javascript" src="23_advanced_timers_files/show_ads.js">
+</script>
+</div><a class="nav" href="http://lazyfoo.net/index.php">News</a>
+<a class="nav" href="http://lazyfoo.net/faq.php">FAQs</a>
+<!--<a class="nav" href="http://lazyfoo.net/games/index.php">Games</a>-->
+<a class="nav" href="http://lazyfoo.net/contact.php">Contact</a>
+<a class="nav" href="http://lazyfoo.net/donate.php">Donations</a>
+
+</div>
+<h6>
+Copyright Lazy Foo' Productions 2004-2017
+</h6>
+
+</div>
+    
+
+</body></html>

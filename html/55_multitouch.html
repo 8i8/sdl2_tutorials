@@ -1,0 +1,241 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+<html><head>
+
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+        <meta name="KEYWORDS" content="C++ SDL 2 Tutorial 2D Windows Linux Mac Android iOS iPhone iPad iPod multi touch">
+        <meta name="DESCRIPTION" content="Learn how to handle multi touch gestures on Android/iOS with SDL 2.">
+
+        <title>Lazy Foo' Productions - Multi Touch</title>
+
+        <link rel="stylesheet" type="text/css" href="55_multitouch_files/lazy.css">
+
+    </head>
+
+    <body>
+
+        <div class="header">
+
+<h1 style="margin-bottom:0px;padding-bottom:0px;border-bottom:0px;">Lazy Foo' Productions</h1>
+<div class="nav">
+<a class="nav" href="http://forums.libsdl.org/">SDL Forums</a>
+<a class="nav" href="http://lazyfoo.net/tutorials/SDL/index.php">SDL Tutorials</a>
+<a class="nav" href="http://lazyfoo.net/articles/index.php">Articles</a>
+<a class="nav" href="http://lazyfoo.net/tutorials/OpenGL/index.php">OpenGL Tutorials</a>
+<a class="nav" href="http://www.opengl.org/discussion_boards/forum.php">OpenGL Forums</a>
+<div class="ads">
+<script id="twitter-wjs" src="55_multitouch_files/widgets.js"></script><script id="facebook-jssdk" src="55_multitouch_files/sdk.js"></script><script type="text/javascript" async="" src="55_multitouch_files/ga.js"></script><script type="text/javascript"><!--
+google_ad_client = "pub-5880704953225255";
+google_ad_width = 468;
+google_ad_height = 60;
+google_ad_format = "468x60_as";
+google_ad_type = "text_image";
+google_ad_channel ="";
+google_color_border = "6699CC";
+google_color_bg = "003366";
+google_color_link = "FFFFFF";
+google_color_url = "AECCEB";
+google_color_text = "AECCEB";
+//--></script>
+<script type="text/javascript" src="55_multitouch_files/show_ads.js">
+</script>
+</div><a class="nav" href="http://lazyfoo.net/index.php">News</a>
+<a class="nav" href="http://lazyfoo.net/faq.php">FAQs</a>
+<!--<a class="nav" href="http://lazyfoo.net/games/index.php">Games</a>-->
+<a class="nav" href="http://lazyfoo.net/contact.php">Contact</a>
+<a class="nav" href="http://lazyfoo.net/donate.php">Donations</a>
+
+</div><script type="text/javascript">
+
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-32350292-1']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+
+</script>
+<!--Init facebook-->
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) return;
+  js = d.createElement(s); js.id = id;
+  js.src = "//connect.facebook.net/en_US/sdk.js#xfbml=1&version=v2.0";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+
+<!--Init twitter-->
+<script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src="https://platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs");</script>
+
+<!--Init google+-->
+<script src="55_multitouch_files/plusone.js"></script>
+</div>        
+        <div class="content">
+
+            <div class="tutPreface"><h1 class="tutHead">Multi Touch</h1>
+            <div class="tutImg"><img src="55_multitouch_files/preview.png"></div>
+            <h6>Last Updated 6/21/15</h6>
+            In this tutorial we'll be using SDL 2's built in functionality to handle multi touch gestures like pinch and rotate.
+            </div>
+
+
+<div class="tutCode">//Scene textures
+LTexture gPinchCloseTexture;
+LTexture gPinchOpenTexture;
+LTexture gRotateTexture;
+</div>
+
+<div class="tutText">
+Like in the previous tutorial, we'll be using a set of textures to show which type of input is happening.
+</div>
+
+
+<div class="tutCode">            //Main loop flag
+            bool quit = false;
+
+            //Event handler
+            SDL_Event e;
+
+            //Touch variables
+            SDL_Point touchLocation = { gScreenRect.w / 2, gScreenRect.h / 2 };
+            LTexture* currentTexture = &amp;gPinchOpenTexture;
+</div>
+
+<div class="tutText">
+Also like the previous tutorial, we'll need to keep track of the touch location and the current texture to render.
+</div>
+
+                        
+<div class="tutCode">                    //Multi touch gesture
+                    else if( e.type == SDL_MULTIGESTURE )
+                    {
+                        //Rotation detected
+                        if( fabs( e.mgesture.dTheta ) &gt; 3.14 / 180.0 )
+                        {
+                            touchLocation.x = e.mgesture.x * gScreenRect.w;
+                            touchLocation.y = e.mgesture.y * gScreenRect.h;
+                            currentTexture = &amp;gRotateTexture;
+                        }
+</div>
+
+<div class="tutText">
+When a multi touch gesture happens a <a href="https://wiki.libsdl.org/SDL_MultiGestureEvent" class="tutLink">SDL_MultiGestureEvent</a>
+ gets generated. Here we check for rotations first by checking the angle
+ on the gesture. The thing to
+remember is that the smallest rotation will get reported so if you pinch
+ and rotate by a 1000th of a radian, it will show up in the gesture. 
+Here we make sure the rotation is at least one degree before reporting 
+it as a
+rotation.<br>
+<br>
+If the rotation is big enough, we set the location of the gesture and set the texture.
+</div>
+                        
+<div class="tutCode">                        //Pinch detected
+                        else if( fabs( e.mgesture.dDist ) &gt; 0.002 )
+                        {
+                            touchLocation.x = e.mgesture.x * gScreenRect.w;
+                            touchLocation.y = e.mgesture.y * gScreenRect.h;
+                            
+                            //Pinch open
+                            if( e.mgesture.dDist &gt; 0 )
+                            {
+                                currentTexture = &amp;gPinchOpenTexture;
+                            }
+                            //Pinch close
+                            else
+                            {
+                                currentTexture = &amp;gPinchCloseTexture;
+                            }
+                        }
+                    }
+</div>
+
+<div class="tutText">
+If the rotation wasn't big enough, we then check if the distance of the 
+pinch. Again remember that coordinates are normalized so a 10 pixel 
+pinch on a 1920 resolution tablet will be reported at around 0.0052.<br>
+<br>
+If the pinch is big enough, we set the gesture position and then check if the pinch was opening or closing.
+</div>
+
+
+<div class="tutCode">                //Clear screen
+                SDL_SetRenderDrawColor( gRenderer, 0xFF, 0xFF, 0xFF, 0xFF );
+                SDL_RenderClear( gRenderer );
+
+                //Render touch texture
+                currentTexture-&gt;render( touchLocation.x - currentTexture-&gt;getWidth() / 2, touchLocation.y - currentTexture-&gt;getHeight() / 2 );
+
+                //Update screen
+                SDL_RenderPresent( gRenderer );
+</div>
+
+<div class="tutText">
+Once again like the previous tutorial, in the rendering we show the current gesture texture and the gesture position.
+</div>
+
+
+
+
+            <div class="tutFooter">
+            Download the media and source code for this tutorial <a class="tutLink" href="http://lazyfoo.net/tutorials/SDL/55_multitouch/55_multitouch.zip">here</a>.<br>
+            <br>
+            <a class="leftNav" href="http://lazyfoo.net/tutorials/SDL/index.php#Multitouch">Back to SDL Tutorials</a><br>
+            </div>
+
+        </div>
+
+        <div class="footer">
+
+<div style="text-align: center;">
+<!--Facebook-->
+<span style="line-height: 10px;" class="fb-share-button" data-href="http://lazyfoo.net/" data-type="button_count"></span>
+
+<!--Google+-->
+<g:plus action="share" annotation="bubble" height="20" href="http://lazyfoo.net/"></g:plus>
+
+<!--Twitter-->
+<a style="line-height: 0px;" href="https://twitter.com/share" class="twitter-share-button" data-lang="en">Tweet</a>
+
+</div>
+<div class="nav">
+<a class="nav" href="http://forums.libsdl.org/">SDL Forums</a>
+<a class="nav" href="http://lazyfoo.net/tutorials/SDL/index.php">SDL Tutorials</a>
+<a class="nav" href="http://lazyfoo.net/articles/index.php">Articles</a>
+<a class="nav" href="http://lazyfoo.net/tutorials/OpenGL/index.php">OpenGL Tutorials</a>
+<a class="nav" href="http://www.opengl.org/discussion_boards/forum.php">OpenGL Forums</a>
+<div class="ads">
+<script type="text/javascript"><!--
+google_ad_client = "pub-5880704953225255";
+google_ad_width = 468;
+google_ad_height = 60;
+google_ad_format = "468x60_as";
+google_ad_type = "text_image";
+google_ad_channel ="";
+google_color_border = "6699CC";
+google_color_bg = "003366";
+google_color_link = "FFFFFF";
+google_color_url = "AECCEB";
+google_color_text = "AECCEB";
+//--></script>
+<script type="text/javascript" src="55_multitouch_files/show_ads.js">
+</script>
+</div><a class="nav" href="http://lazyfoo.net/index.php">News</a>
+<a class="nav" href="http://lazyfoo.net/faq.php">FAQs</a>
+<!--<a class="nav" href="http://lazyfoo.net/games/index.php">Games</a>-->
+<a class="nav" href="http://lazyfoo.net/contact.php">Contact</a>
+<a class="nav" href="http://lazyfoo.net/donate.php">Donations</a>
+
+</div>
+<h6>
+Copyright Lazy Foo' Productions 2004-2017
+</h6>
+
+</div>
+    
+
+</body></html>

@@ -1,0 +1,489 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+<html><head>
+
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+        <meta name="KEYWORDS" content="C++ SDL 2 Tutorial 2D Windows Linux Mac circle collision detection">
+        <meta name="DESCRIPTION" content="Check for collision with circles in SDL 2">
+
+        <title>Lazy Foo' Productions - Circular Collision Detection</title>
+
+        <link rel="stylesheet" type="text/css" href="29_circular_collision_detection_files/lazy.css">
+
+    </head>
+
+    <body>
+
+        <div class="header">
+
+<h1 style="margin-bottom:0px;padding-bottom:0px;border-bottom:0px;">Lazy Foo' Productions</h1>
+<div class="nav">
+<a class="nav" href="http://forums.libsdl.org/">SDL Forums</a>
+<a class="nav" href="http://lazyfoo.net/tutorials/SDL/index.php">SDL Tutorials</a>
+<a class="nav" href="http://lazyfoo.net/articles/index.php">Articles</a>
+<a class="nav" href="http://lazyfoo.net/tutorials/OpenGL/index.php">OpenGL Tutorials</a>
+<a class="nav" href="http://www.opengl.org/discussion_boards/forum.php">OpenGL Forums</a>
+<div class="ads">
+<script id="twitter-wjs" src="29_circular_collision_detection_files/widgets.js"></script><script id="facebook-jssdk" src="29_circular_collision_detection_files/sdk.js"></script><script type="text/javascript" async="" src="29_circular_collision_detection_files/ga.js"></script><script type="text/javascript"><!--
+google_ad_client = "pub-5880704953225255";
+google_ad_width = 468;
+google_ad_height = 60;
+google_ad_format = "468x60_as";
+google_ad_type = "text_image";
+google_ad_channel ="";
+google_color_border = "6699CC";
+google_color_bg = "003366";
+google_color_link = "FFFFFF";
+google_color_url = "AECCEB";
+google_color_text = "AECCEB";
+//--></script>
+<script type="text/javascript" src="29_circular_collision_detection_files/show_ads.js">
+</script>
+</div><a class="nav" href="http://lazyfoo.net/index.php">News</a>
+<a class="nav" href="http://lazyfoo.net/faq.php">FAQs</a>
+<!--<a class="nav" href="http://lazyfoo.net/games/index.php">Games</a>-->
+<a class="nav" href="http://lazyfoo.net/contact.php">Contact</a>
+<a class="nav" href="http://lazyfoo.net/donate.php">Donations</a>
+
+</div><script type="text/javascript">
+
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-32350292-1']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+
+</script>
+<!--Init facebook-->
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) return;
+  js = d.createElement(s); js.id = id;
+  js.src = "//connect.facebook.net/en_US/sdk.js#xfbml=1&version=v2.0";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+
+<!--Init twitter-->
+<script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src="https://platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs");</script>
+
+<!--Init google+-->
+<script src="29_circular_collision_detection_files/plusone.js"></script>
+</div>        
+        <div class="content">
+
+            <div class="tutPreface"><h1 class="tutHead">Circular Collision Detection</h1>
+            <div class="tutImg"><img src="29_circular_collision_detection_files/preview.png"></div>
+            <h6>Last Updated 7/12/14</h6>
+            Along with collision boxes, circles are the most common form
+ of collider. Here we'll be checking collision between two circles and a
+ circle and a box.
+            </div>
+
+<div class="tutText">
+Checking collision between two circles is easy. All you have to do is 
+check whether the distance between the center of each circle is less 
+than the sum of their radii (radii is the
+plural for radius).<br>
+<br>
+For box/circle collision, you have to find the point on the collision 
+box that is closest to the center of the circle. If that point is less 
+than the radius of the circle, there is
+a collision.
+</div>
+
+
+<div class="tutCode">//A circle stucture
+struct Circle
+{
+    int x, y;
+    int r;
+};
+</div>
+
+<div class="tutText">
+SDL has a built in rectangle structure, but we have to make our own circle structure with a position and radius.
+</div>
+
+
+<div class="tutCode">//The dot that will move around on the screen
+class Dot
+{
+    public:
+        //The dimensions of the dot
+        static const int DOT_WIDTH = 20;
+        static const int DOT_HEIGHT = 20;
+
+        //Maximum axis velocity of the dot
+        static const int DOT_VEL = 1;
+
+        //Initializes the variables
+        Dot( int x, int y );
+
+        //Takes key presses and adjusts the dot's velocity
+        void handleEvent( SDL_Event&amp; e );
+
+        //Moves the dot and checks collision
+        void move( SDL_Rect&amp; square, Circle&amp; circle );
+
+        //Shows the dot on the screen
+        void render();
+
+        //Gets collision circle
+        Circle&amp; getCollider();
+
+    private:
+        //The X and Y offsets of the dot
+        int mPosX, mPosY;
+
+        //The velocity of the dot
+        int mVelX, mVelY;
+        
+        //Dot's collision circle
+        Circle mCollider;
+
+        //Moves the collision circle relative to the dot's offset
+        void shiftColliders();
+};
+</div>
+
+<div class="tutText">
+Here is the dot class from previous <a href="http://lazyfoo.net/tutorials/SDL/27_collision_detection/index.php" class="tutLink">collision detection tutorials</a>
+ with some more additons. The move function takes
+in a circle and a rectangle to check collision against when moving. We 
+also now have a circle collider instead of a rectangle collider.
+</div>
+
+
+<div class="tutCode">//Circle/Circle collision detector
+bool checkCollision( Circle&amp; a, Circle&amp; b );
+
+//Circle/Box collision detector
+bool checkCollision( Circle&amp; a, SDL_Rect&amp; b );
+
+//Calculates distance squared between two points
+double distanceSquared( int x1, int y1, int x2, int y2 );
+</div>
+
+<div class="tutText">
+For this tutorial we have our collision detection functions for 
+circle/circle and circle/rectangle collisions. We also have a function 
+that calculates the distance between two points
+squared.<br>
+<br>
+Using the distance squared instead of the distance is an optimization we'll go into more detail later.
+</div>
+
+
+<div class="tutCode">Dot::Dot( int x, int y )
+{
+    //Initialize the offsets
+    mPosX = x;
+    mPosY = y;
+
+    //Set collision circle size
+    mCollider.r = DOT_WIDTH / 2;
+
+    //Initialize the velocity
+    mVelX = 0;
+    mVelY = 0;
+
+    //Move collider relative to the circle
+    shiftColliders();
+}
+</div>
+
+<div class="tutText">
+The constructor takes in a position and initializes the colliders and velocity.
+</div>
+
+
+<div class="tutCode">void Dot::move( SDL_Rect&amp; square, Circle&amp; circle )
+{
+    //Move the dot left or right
+    mPosX += mVelX;
+    shiftColliders();
+
+    //If the dot collided or went too far to the left or right
+    if( ( mPosX - mCollider.r &lt; 0 ) || ( mPosX + mCollider.r &gt; SCREEN_WIDTH ) || checkCollision( mCollider, square ) || checkCollision( mCollider, circle ) )
+    {
+        //Move back
+        mPosX -= mVelX;
+        shiftColliders();
+    }
+
+    //Move the dot up or down
+    mPosY += mVelY;
+    shiftColliders();
+
+    //If the dot collided or went too far up or down
+    if( ( mPosY - mCollider.r &lt; 0 ) || ( mPosY + mCollider.r &gt; SCREEN_HEIGHT ) || checkCollision( mCollider, square ) || checkCollision( mCollider, circle ) )
+    {
+        //Move back
+        mPosY -= mVelY;
+        shiftColliders();
+    }
+}
+</div>
+
+<div class="tutText">
+Like in previous <a href="http://lazyfoo.net/tutorials/SDL/28_per-pixel_collision_detection/index.php" class="tutLink">collision detection tutorials</a>,
+ we move along the x axis, check collision against the
+edges of the screen, and check against the other scene objects. If the 
+dot hit something we move back. As always, whenever the dot moves its 
+colliders move with it.<br>
+<br>
+Then we do this again for the y axis.
+</div>
+
+
+<div class="tutCode">void Dot::render()
+{
+    //Show the dot
+    gDotTexture.render( mPosX - mCollider.r, mPosY - mCollider.r );
+}
+</div>
+
+<div class="tutText">
+The rendering code is a little different. SDL_Rects have their position 
+at the top left where our circle structure has the position at the 
+center. This means we need to offset the
+render position to the top left of the circle by subtracting the radius 
+from the x and y position.
+</div>
+
+
+<div class="tutCode">bool checkCollision( Circle&amp; a, Circle&amp; b )
+{
+    //Calculate total radius squared
+    int totalRadiusSquared = a.r + b.r;
+    totalRadiusSquared = totalRadiusSquared * totalRadiusSquared;
+
+    //If the distance between the centers of the circles is less than the sum of their radii
+    if( distanceSquared( a.x, a.y, b.x, b.y ) &lt; ( totalRadiusSquared ) )
+    {
+        //The circles have collided
+        return true;
+    }
+
+    //If not
+    return false;
+}
+</div>
+
+<div class="tutText">
+Here is our circle to circle collision detector. It simply checks if the
+ distance squared between the centers is less than the sum of the radii 
+squared. If it is, there is a
+collison.<br>
+<br>
+Why are we using the distance squared as opposed to the plain distance? 
+Because to calculate the distance involves a square root and calculating
+ a square root is a relatively
+expensive operation. Fortunately if x &gt; y then x^2 &gt; y^2, so we 
+can save a square root operation by just comparing the distance squared.
+</div>
+
+
+<div class="tutCode">bool checkCollision( Circle&amp; a, SDL_Rect&amp; b )
+{
+    //Closest point on collision box
+    int cX, cY;
+
+    //Find closest x offset
+    if( a.x &lt; b.x )
+    {
+        cX = b.x;
+    }
+    else if( a.x &gt; b.x + b.w )
+    {
+        cX = b.x + b.w;
+    }
+    else
+    {
+        cX = a.x;
+    }
+</div>
+
+<div class="tutText">
+To check if a box and circle collided we need to find the closest point on the box.<br>
+<br>
+If the circle's center is to the left of the box, the x position of the closest point is on the left side of the box.
+<div class="tutImg"><img src="29_circular_collision_detection_files/less.jpg"></div>
+<br>
+If the circle's center is to the right of the box, the x position of the closest point is on the right side of the box.
+<div class="tutImg"><img src="29_circular_collision_detection_files/greater.jpg"></div>
+<br>
+If the circle's center is inside of the box, the x position of the closest point is the same as the x position of the circle.
+<div class="tutImg"><img src="29_circular_collision_detection_files/equal.jpg"></div>
+</div>
+
+
+
+<div class="tutCode">    //Find closest y offset
+    if( a.y &lt; b.y )
+    {
+        cY = b.y;
+    }
+    else if( a.y &gt; b.y + b.h )
+    {
+        cY = b.y + b.h;
+    }
+    else
+    {
+        cY = a.y;
+    }
+
+    //If the closest point is inside the circle
+    if( distanceSquared( a.x, a.y, cX, cY ) &lt; a.r * a.r )
+    {
+        //This box and the circle have collided
+        return true;
+    }
+
+    //If the shapes have not collided
+    return false;
+}
+</div>
+
+<div class="tutText">
+Here we find the closest y position much like we did the x position. If 
+the distance squared between the closest point on the box and the center
+ of the circle is less than the
+circle's radius squared, then there is a collision.
+</div>
+
+
+<div class="tutCode">double distanceSquared( int x1, int y1, int x2, int y2 )
+{
+    int deltaX = x2 - x1;
+    int deltaY = y2 - y1;
+    return deltaX*deltaX + deltaY*deltaY;
+}
+</div>
+
+<div class="tutText">
+Here is the distance squared function. It's just a distance calculation ( squareRoot( x^2 + y^2 ) ) without the square root.
+</div>
+
+
+<div class="tutCode">            //The dot that will be moving around on the screen
+            Dot dot( Dot::DOT_WIDTH / 2, Dot::DOT_HEIGHT / 2 );
+            Dot otherDot( SCREEN_WIDTH / 4, SCREEN_HEIGHT / 4 );
+
+            //Set the wall
+            SDL_Rect wall;
+            wall.x = 300;
+            wall.y = 40;
+            wall.w = 40;
+            wall.h = 400;
+</div>
+
+<div class="tutText">
+Before we enter the main loop we define the scene objects.
+</div>
+
+            
+<div class="tutCode">            //While application is running
+            while( !quit )
+            {
+                //Handle events on queue
+                while( SDL_PollEvent( &amp;e ) != 0 )
+                {
+                    //User requests quit
+                    if( e.type == SDL_QUIT )
+                    {
+                        quit = true;
+                    }
+
+                    //Handle input for the dot
+                    dot.handleEvent( e );
+                }
+
+                //Move the dot and check collision
+                dot.move( wall, otherDot.getCollider() );
+
+                //Clear screen
+                SDL_SetRenderDrawColor( gRenderer, 0xFF, 0xFF, 0xFF, 0xFF );
+                SDL_RenderClear( gRenderer );
+
+                //Render wall
+                SDL_SetRenderDrawColor( gRenderer, 0x00, 0x00, 0x00, 0xFF );        
+                SDL_RenderDrawRect( gRenderer, &amp;wall );
+                
+                //Render dots
+                dot.render();
+                otherDot.render();
+
+                //Update screen
+                SDL_RenderPresent( gRenderer );
+            }
+</div>
+
+<div class="tutText">
+Finally in our main loop we handle input, move the dot with collision check and render the scene objects to the screen.
+</div>
+
+
+
+            <div class="tutFooter">
+            Download the media and source code for this tutorial <a class="tutLink" href="http://lazyfoo.net/tutorials/SDL/29_circular_collision_detection/29_circular_collision_detection.zip">here</a>.<br>
+            <br>
+            <a class="leftNav" href="http://lazyfoo.net/tutorials/SDL/index.php#Circular%20Collision%20Detection">Back to SDL Tutorials</a><br>
+            </div>
+
+        </div>
+
+        <div class="footer">
+
+<div style="text-align: center;">
+<!--Facebook-->
+<span style="line-height: 10px;" class="fb-share-button" data-href="http://lazyfoo.net/" data-type="button_count"></span>
+
+<!--Google+-->
+<g:plus action="share" annotation="bubble" height="20" href="http://lazyfoo.net/"></g:plus>
+
+<!--Twitter-->
+<a style="line-height: 0px;" href="https://twitter.com/share" class="twitter-share-button" data-lang="en">Tweet</a>
+
+</div>
+<div class="nav">
+<a class="nav" href="http://forums.libsdl.org/">SDL Forums</a>
+<a class="nav" href="http://lazyfoo.net/tutorials/SDL/index.php">SDL Tutorials</a>
+<a class="nav" href="http://lazyfoo.net/articles/index.php">Articles</a>
+<a class="nav" href="http://lazyfoo.net/tutorials/OpenGL/index.php">OpenGL Tutorials</a>
+<a class="nav" href="http://www.opengl.org/discussion_boards/forum.php">OpenGL Forums</a>
+<div class="ads">
+<script type="text/javascript"><!--
+google_ad_client = "pub-5880704953225255";
+google_ad_width = 468;
+google_ad_height = 60;
+google_ad_format = "468x60_as";
+google_ad_type = "text_image";
+google_ad_channel ="";
+google_color_border = "6699CC";
+google_color_bg = "003366";
+google_color_link = "FFFFFF";
+google_color_url = "AECCEB";
+google_color_text = "AECCEB";
+//--></script>
+<script type="text/javascript" src="29_circular_collision_detection_files/show_ads.js">
+</script>
+</div><a class="nav" href="http://lazyfoo.net/index.php">News</a>
+<a class="nav" href="http://lazyfoo.net/faq.php">FAQs</a>
+<!--<a class="nav" href="http://lazyfoo.net/games/index.php">Games</a>-->
+<a class="nav" href="http://lazyfoo.net/contact.php">Contact</a>
+<a class="nav" href="http://lazyfoo.net/donate.php">Donations</a>
+
+</div>
+<h6>
+Copyright Lazy Foo' Productions 2004-2017
+</h6>
+
+</div>
+    
+
+</body></html>

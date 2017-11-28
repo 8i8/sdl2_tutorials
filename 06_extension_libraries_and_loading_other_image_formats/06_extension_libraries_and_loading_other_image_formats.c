@@ -1,24 +1,54 @@
 /*
- * In order to load any other format than the bitmap we must use a specific
- * library, this program demonstrats the loading of a png image file.
+ * Extension Libraries and Loading Other Image Formats
+ * 
+ * SDL extension libraries allow you do things like load image files besides
+ * BMP, render TTF fonts, and play music. You can set up SDL_image to load PNG
+ * files, which can save you a lot of disk space. In this tutorial we'll be
+ * covering how to install SDL_image.
+ */
+/*
+ * SDL itself is an extension library since it adds game and media
+ * functionality that doesn't come standard with your C++ compiler. As you're
+ * setting up your extension library, you'll realize it's nearly identical to
+ * installing SDL by itself. We'll be specifically installing SDL_image, but if
+ * you can install that extension library you should be able to install any of
+ * them.
+ *
+ * After you set up SDL_image, we'll cover how to create load a PNG with SDL.
  *
  * https://www.libsdl.org/projects/SDL_image/docs/SDL_image_8.html
+ */
+/*
+ * Loading PNGs with SDL_image
+ *
+ * Now that the library is all set up, let's load some PNGs.
+ */
+/*
+ * To use any SDL_image function or data types, we need to include the
+ * SDL_image header. We'd have to do the same for SDL_ttf, or SDL_mixer.
  */
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
 #include <stdio.h>
 
-const int SCREEN_WIDTH = 640;
-const int SCREEN_HEIGHT = 480;
-
-short init();
-short loadMedia();
+#define SCREEN_WIDTH	640
+#define SCREEN_HEIGHT	480
 
 SDL_Surface* loadSurface(char *path);
 SDL_Window* gWindow = NULL;
 SDL_Surface* gScreenSurface = NULL;
 SDL_Surface* gPNGSurface = NULL;
 
+/*
+ * Now that we're using SDL_image, we need to initialize it. Here we want to
+ * initialize SDL_image with PNG loading, so we pass in the PNG loading flags
+ * into IMG_Init. IMG_Init returns the flags that loaded successfully. If the
+ * flags that are returned do not contain the flags we requested, that means
+ * there's an error.
+ *
+ * When there's an error with SDL_image, you get error string with IMG_GetError
+ * as opposed to SDL_GetError.
+ */
 short init()
 {
 	if(SDL_Init(SDL_INIT_VIDEO) < 0) {
@@ -38,7 +68,6 @@ short init()
 		return -1;
 	}
 
-	/* The PNG functionality is initalized here */
 	if((IMG_Init(IMG_INIT_PNG)& IMG_INIT_PNG) == 0) {
 		SDL_Log("%s(), IMG_Init failed.", __func__);
 		return -1;
@@ -68,7 +97,11 @@ void close_all()
 }
 
 /*
- * The IMG_Load function is used to load in a PNG image.
+ * Our image loading function is pretty much the same as before, only now it
+ * uses IMG_Load as opposed to SDL_LoadBMP. IMG_Load can load many different
+ * types of format which you can find out about in the SDL_image documentation.
+ * Like with IMG_Init, when there's an error with IMG_Load, we call
+ * IMG_GetError to get the error string.
  */
 SDL_Surface* loadSurface(char *path)
 {

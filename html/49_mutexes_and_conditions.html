@@ -1,0 +1,387 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+<html><head>
+
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+        <meta name="KEYWORDS" content="C++ SDL 2 Tutorial 2D Windows Linux Mac Mutexes Conditions">
+        <meta name="DESCRIPTION" content="Synchronize threads with signaling in SDL 2">
+
+        <title>Lazy Foo' Productions - Mutexes and Conditions</title>
+
+        <link rel="stylesheet" type="text/css" href="49_mutexes_and_conditions_files/lazy.css">
+
+    </head>
+
+    <body>
+
+        <div class="header">
+
+<h1 style="margin-bottom:0px;padding-bottom:0px;border-bottom:0px;">Lazy Foo' Productions</h1>
+<div class="nav">
+<a class="nav" href="http://forums.libsdl.org/">SDL Forums</a>
+<a class="nav" href="http://lazyfoo.net/tutorials/SDL/index.php">SDL Tutorials</a>
+<a class="nav" href="http://lazyfoo.net/articles/index.php">Articles</a>
+<a class="nav" href="http://lazyfoo.net/tutorials/OpenGL/index.php">OpenGL Tutorials</a>
+<a class="nav" href="http://www.opengl.org/discussion_boards/forum.php">OpenGL Forums</a>
+<div class="ads">
+<script id="twitter-wjs" src="49_mutexes_and_conditions_files/widgets.js"></script><script id="facebook-jssdk" src="49_mutexes_and_conditions_files/sdk.js"></script><script type="text/javascript" async="" src="49_mutexes_and_conditions_files/ga.js"></script><script type="text/javascript"><!--
+google_ad_client = "pub-5880704953225255";
+google_ad_width = 468;
+google_ad_height = 60;
+google_ad_format = "468x60_as";
+google_ad_type = "text_image";
+google_ad_channel ="";
+google_color_border = "6699CC";
+google_color_bg = "003366";
+google_color_link = "FFFFFF";
+google_color_url = "AECCEB";
+google_color_text = "AECCEB";
+//--></script>
+<script type="text/javascript" src="49_mutexes_and_conditions_files/show_ads.js">
+</script>
+</div><a class="nav" href="http://lazyfoo.net/index.php">News</a>
+<a class="nav" href="http://lazyfoo.net/faq.php">FAQs</a>
+<!--<a class="nav" href="http://lazyfoo.net/games/index.php">Games</a>-->
+<a class="nav" href="http://lazyfoo.net/contact.php">Contact</a>
+<a class="nav" href="http://lazyfoo.net/donate.php">Donations</a>
+
+</div><script type="text/javascript">
+
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-32350292-1']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+
+</script>
+<!--Init facebook-->
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) return;
+  js = d.createElement(s); js.id = id;
+  js.src = "//connect.facebook.net/en_US/sdk.js#xfbml=1&version=v2.0";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+
+<!--Init twitter-->
+<script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src="https://platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs");</script>
+
+<!--Init google+-->
+<script src="49_mutexes_and_conditions_files/plusone.js"></script>
+</div>        
+        <div class="content">
+
+            <div class="tutPreface"><h1 class="tutHead">Mutexes and Conditions</h1>
+            <div class="tutImg"><img src="49_mutexes_and_conditions_files/preview.png"></div>
+            <h6>Last Updated 6/14/15</h6>
+            Not only can you lock <a href="http://lazyfoo.net/tutorials/SDL/47_semaphores/index.php" class="tutLink">critial sections</a> in threads, but with mutexes and conditions it is possible for threads to
+            tell each other when to unlock.
+            </div>
+            
+
+<div class="tutCode">//Our worker functions
+int producer( void* data );
+int consumer( void* data );
+void produce();
+void consume();
+</div>
+
+<div class="tutText">
+For this demo we'll have two threads: a producer which fills a buffer 
+and a consumer that empties a buffer. Not only can the two threads not 
+use the same buffer at the same time, but
+a consumer can't read from an empty buffer and a producer can't fill a 
+buffer that's already full.<br>
+<br>
+We'll use a mutex (<b>mut</b>ually <b>ex</b>clusive) to prevent the two 
+threads from grabbing the same piece of data and conditions to let the 
+threads know when they can consume and
+can produce.
+</div>
+
+
+<div class="tutCode">//The protective mutex
+SDL_mutex* gBufferLock = NULL;
+
+//The conditions
+SDL_cond* gCanProduce = NULL;
+SDL_cond* gCanConsume = NULL;
+
+//The "data buffer"
+int gData = -1;
+</div>
+
+<div class="tutText">
+Here we're globally declaring the mutex and conditions that will be used by the threads.
+</div>
+
+
+<div class="tutCode">bool loadMedia()
+{
+    //Create the mutex
+    gBufferLock = SDL_CreateMutex();
+            
+    //Create conditions
+    gCanProduce = SDL_CreateCond();
+    gCanConsume = SDL_CreateCond();
+
+    //Loading success flag
+    bool success = true;
+    
+    //Load splash texture
+    if( !gSplashTexture.loadFromFile( "49_mutexes_and_conditions/splash.png" ) )
+    {
+        printf( "Failed to load splash texture!\n" );
+        success = false;
+    }
+
+    return success;
+}
+</div>
+
+<div class="tutText">
+To allocate mutexes and conditons we use <a class="tutLink" href="http://wiki.libsdl.org/SDL_CreateMutex">SDL_CreateMutex</a> and 
+<a class="tutLink" href="http://wiki.libsdl.org/SDL_CreateCond">SDL_CreateCond</a> respectively.
+</div>
+
+
+<div class="tutCode">void close()
+{
+    //Free loaded images
+    gSplashTexture.free();
+
+    //Destroy the mutex
+    SDL_DestroyMutex( gBufferLock );
+    gBufferLock = NULL;
+            
+    //Destroy conditions
+    SDL_DestroyCond( gCanProduce );
+    SDL_DestroyCond( gCanConsume );
+    gCanProduce = NULL;
+    gCanConsume = NULL;
+
+    //Destroy window    
+    SDL_DestroyRenderer( gRenderer );
+    SDL_DestroyWindow( gWindow );
+    gWindow = NULL;
+    gRenderer = NULL;
+
+    //Quit SDL subsystems
+    IMG_Quit();
+    SDL_Quit();
+}
+</div>
+
+<div class="tutText">
+And to deallocate mutexes and conditions we use <a class="tutLink" href="http://wiki.libsdl.org/SDL_DestroyMutex">SDL_DestroyMutex</a> and
+<a class="tutLink" href="http://wiki.libsdl.org/SDL_DestroyCond">SDL_DestroyCond</a>.
+</div>
+
+<div class="tutCode">int producer( void *data )
+{
+    printf( "\nProducer started...\n" );
+
+    //Seed thread random
+    srand( SDL_GetTicks() );
+    
+    //Produce
+    for( int i = 0; i &lt; 5; ++i )
+    {
+        //Wait
+        SDL_Delay( rand() % 1000 );
+        
+        //Produce
+        produce();
+    }
+
+    printf( "\nProducer finished!\n" );
+    
+    return 0;
+
+}
+
+int consumer( void *data )
+{
+    printf( "\nConsumer started...\n" );
+
+    //Seed thread random
+    srand( SDL_GetTicks() );
+
+    for( int i = 0; i &lt; 5; ++i )
+    {
+        //Wait
+        SDL_Delay( rand() % 1000 );
+        
+        //Consume
+        consume();
+    }
+    
+    printf( "\nConsumer finished!\n" );
+
+    return 0;
+}
+</div>
+
+<div class="tutText">
+So here are our two worker threads. The producer tries to produce 5 times and the consumer tries to consume 5 times.
+</div>
+
+
+<div class="tutCode">void produce()
+{
+    //Lock
+    SDL_LockMutex( gBufferLock );
+    
+    //If the buffer is full
+    if( gData != -1 )
+    {
+        //Wait for buffer to be cleared
+        printf( "\nProducer encountered full buffer, waiting for consumer to empty buffer...\n" );
+        SDL_CondWait( gCanProduce, gBufferLock );
+    }
+
+    //Fill and show buffer
+    gData = rand() % 255;
+    printf( "\nProduced %d\n", gData );
+    
+    //Unlock
+    SDL_UnlockMutex( gBufferLock );
+    
+    //Signal consumer
+    SDL_CondSignal( gCanConsume );
+}
+
+void consume()
+{
+    //Lock
+    SDL_LockMutex( gBufferLock );
+    
+    //If the buffer is empty
+    if( gData == -1 )
+    {
+        //Wait for buffer to be filled
+        printf( "\nConsumer encountered empty buffer, waiting for producer to fill buffer...\n" );
+        SDL_CondWait( gCanConsume, gBufferLock );
+    }
+
+    //Show and empty buffer
+    printf( "\nConsumed %d\n", gData );
+    gData = -1;
+    
+    //Unlock
+    SDL_UnlockMutex( gBufferLock );
+    
+    //Signal producer
+    SDL_CondSignal( gCanProduce );
+}
+</div>
+
+<div class="tutText">
+Here are the functions that produce and consume. Producing a buffer 
+means generating a random number and consuming a buffer mean reseting 
+the generated number. The best way to show 
+how this works is go through an example.<br>
+<br>
+Let's say the producer fires first and locks the mutex with <a class="tutLink" href="http://wiki.libsdl.org/SDL_LockMutex">SDL_LockMutex</a> much like it would a semaphore with a
+value of one:
+<div class="tutImg"><img src="49_mutexes_and_conditions_files/run_01.png"></div>
+<br>
+The buffer is empty so it goes through and produces:
+<div class="tutImg"><img src="49_mutexes_and_conditions_files/run_02.png"></div>
+<br>
+It then exits the function to unlock the critical section with <a class="tutLink" href="http://wiki.libsdl.org/SDL_UnlockMutex">SDL_UnlockMutex</a> so the consumer can consume:
+<div class="tutImg"><img src="49_mutexes_and_conditions_files/run_03.png"></div>
+<br>
+Ideally, we would want the consumer to consume, but imagine if the producer fired again:
+<div class="tutImg"><img src="49_mutexes_and_conditions_files/run_01.png"></div>
+<br>
+And after the producer locked the critical section the consumer tries to
+ get it but the critical section is already locked to the producer:
+<div class="tutImg"><img src="49_mutexes_and_conditions_files/run_05.png"></div>
+With just a binary semaphore, this would be a problem because the 
+producer can't produce into a full buffer and the consumer is locked 
+behind a mutex. However, mutexes have the
+ability to be used with conditions.<br>
+<br>
+What the condition allows us to do is if the buffer is already full, we can wait on a condition with
+<a class="tutLink" href="http://wiki.libsdl.org/SDL_CondWait">SDL_CondWait</a> and unlock the mutex for other threads:
+<div class="tutImg"><img src="49_mutexes_and_conditions_files/run_06.png"></div>
+<br>
+Now that the consumer is unlocked it can go through and consume:
+<div class="tutImg"><img src="49_mutexes_and_conditions_files/run_07.png"></div>
+<br>
+And once it's done it signals the producer with <a class="tutLink" href="http://wiki.libsdl.org/SDL_CondSignal">SDL_CondSignal</a> to produce again:
+<div class="tutImg"><img src="49_mutexes_and_conditions_files/run_08.png"></div>
+<br>
+And then it can continue through:
+<div class="tutImg"><img src="49_mutexes_and_conditions_files/run_09.png"></div>
+<br>
+With the critical section protected by a mutex and the ability of the 
+threads to talk to each other, the worker threads will work even through
+ we do not know in which order they will
+execute.
+</div>
+
+
+            <div class="tutFooter">
+            Download the media and source code for this tutorial <a class="tutLink" href="http://lazyfoo.net/tutorials/SDL/49_mutexes_and_conditions/49_mutexes_and_conditions.zip">here</a>.<br>
+            <br>
+            <a class="leftNav" href="http://lazyfoo.net/tutorials/SDL/index.php#Mutexes%20and%20Conditions">Back to SDL Tutorials</a><br>
+            </div>
+
+        </div>
+
+        <div class="footer">
+
+<div style="text-align: center;">
+<!--Facebook-->
+<span style="line-height: 10px;" class="fb-share-button" data-href="http://lazyfoo.net/" data-type="button_count"></span>
+
+<!--Google+-->
+<g:plus action="share" annotation="bubble" height="20" href="http://lazyfoo.net/"></g:plus>
+
+<!--Twitter-->
+<a style="line-height: 0px;" href="https://twitter.com/share" class="twitter-share-button" data-lang="en">Tweet</a>
+
+</div>
+<div class="nav">
+<a class="nav" href="http://forums.libsdl.org/">SDL Forums</a>
+<a class="nav" href="http://lazyfoo.net/tutorials/SDL/index.php">SDL Tutorials</a>
+<a class="nav" href="http://lazyfoo.net/articles/index.php">Articles</a>
+<a class="nav" href="http://lazyfoo.net/tutorials/OpenGL/index.php">OpenGL Tutorials</a>
+<a class="nav" href="http://www.opengl.org/discussion_boards/forum.php">OpenGL Forums</a>
+<div class="ads">
+<script type="text/javascript"><!--
+google_ad_client = "pub-5880704953225255";
+google_ad_width = 468;
+google_ad_height = 60;
+google_ad_format = "468x60_as";
+google_ad_type = "text_image";
+google_ad_channel ="";
+google_color_border = "6699CC";
+google_color_bg = "003366";
+google_color_link = "FFFFFF";
+google_color_url = "AECCEB";
+google_color_text = "AECCEB";
+//--></script>
+<script type="text/javascript" src="49_mutexes_and_conditions_files/show_ads.js">
+</script>
+</div><a class="nav" href="http://lazyfoo.net/index.php">News</a>
+<a class="nav" href="http://lazyfoo.net/faq.php">FAQs</a>
+<!--<a class="nav" href="http://lazyfoo.net/games/index.php">Games</a>-->
+<a class="nav" href="http://lazyfoo.net/contact.php">Contact</a>
+<a class="nav" href="http://lazyfoo.net/donate.php">Donations</a>
+
+</div>
+<h6>
+Copyright Lazy Foo' Productions 2004-2017
+</h6>
+
+</div>
+    
+
+</body></html>

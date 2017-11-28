@@ -1,15 +1,23 @@
 /*
- * This program demonstrates the fadin and fadeout of two images using alpha
- * blending with the SDL_SetTextureAlphaMod function.
+ * Alpha Blending
  *
- * https://wiki.libsdl.org/SDL_SetTextureAlphaMod
+ * Thanks to new hardware accelerated rendering, transparency is much faster in
+ * SDL 2.0. Here we'll use alpha modulation (which works much like color
+ * modulation) to control the transparency of a texture.
+ *
+ * Here we're going to add two functions to support alpha transparency on a
+ * texture. First there's LTexture_setAlpha which will function much like
+ * LTexture_setColor did in the color modulation tutorial. There's also
+ * LTexture_setBlendMode which will control how the texture is blended. In
+ * order to get blending to work properly, you must set the blend mode on the
+ * texture. We'll cover this in detail later.
  */
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
 #include <stdio.h>
 
-const int SCREEN_WIDTH = 640;
-const int SCREEN_HEIGHT = 480;
+#define SCREEN_WIDTH	640
+#define SCREEN_HEIGHT	480
 
 typedef struct {
 	SDL_Texture *mTexture;
@@ -105,11 +113,11 @@ short loadFromFile(LTexture *lt, char *path)
 	return 0;
 }
 
-void LTexture_setColor(LTexture *lt, Uint8 red, Uint8 green, Uint8 blue)
-{
-	SDL_SetTextureColorMod(lt->mTexture, red, green, blue);
-}
-
+/*
+ * Here are the SDL functions that do the actual work. SDL_SetTextureBlendMode
+ * in setBlendMode allows us to enable blending and SDL_SetTextureAlphaMod
+ * allows us to set the amount of alpha for the whole texture.
+ */
 void LTexture_setBlendMode(LTexture *lt, SDL_BlendMode blending)
 {
 	SDL_SetTextureBlendMode(lt->mTexture, blending);
@@ -142,6 +150,21 @@ int LTexture_getHeight(LTexture *lt)
 	return lt->mHeight;
 }
 
+/*
+ * Here in the texture loading function we're loading the front texture we're
+ * going to alpha blend and a background texture. As the front texture gets
+ * more transparent, we'll be able to see more of the back texture. As you can
+ * see in the code, after we load the front texture successfully we set the SDL
+ * BlendMode to blend so blending is enabled. Since the background isn't going
+ * to be transparent, we don't have to set the blending on it.
+ * 
+ * Now how does alpha work? Alpha is opacity, and the lower the opacity the
+ * more we can see through it. Like red, green, or blue color components it
+ * goes from 0 to 255 when modulating it. The best way to understand it is with
+ * some examples. Say if we had the front image on a white background.
+ * 
+ * As will see that the lower the alpha the more transparent it is.
+ */
 short loadMedia()
 {
 	if(loadFromFile(&gModulatedTexture, "fadeout.png"))
@@ -169,6 +192,10 @@ void close_all()
 	SDL_Quit();
 }
 
+/*
+ * The event loop handles quit events and making the alpha value go up/down
+ * with the w/s keys.
+ */
 void get_key_pressed(SDL_Event *e, Uint8 *a)
 {
 	if(e->key.keysym.sym == SDLK_w)
@@ -187,6 +214,17 @@ void get_key_pressed(SDL_Event *e, Uint8 *a)
 	}
 }
 
+/*
+ * Right before entering the main loop, we declare a variable to control how
+ * much alpha the texture has. It is initialized to 255 so the front texture
+ * starts out completely opaque.
+ *
+ * At the end of the main loop we do our rendering. After clearing the screen
+ * we render the background first and then we render the front modulated
+ * texture over it. Right before rendering the front texture, we set its alpha
+ * value. Try increasing/decreasing the alpha value to see how transparency
+ * affects the rendering.
+ */
 int main(int argc, char* argv[])
 {
 	SDL_Event e;
@@ -214,7 +252,6 @@ int main(int argc, char* argv[])
 		SDL_RenderClear(gRenderer);
 
 		LTexture_render(&gBackgroundTexture, 0, 0, clip);
-
 		LTexture_setAlpha(&gModulatedTexture, a);
 		LTexture_render(&gModulatedTexture, 0, 0, clip);
 

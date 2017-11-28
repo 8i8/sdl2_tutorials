@@ -1,0 +1,327 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+<html><head>
+
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+        <meta name="KEYWORDS" content="C++ SDL 2 Tutorial 2D Windows Linux Mac Frame Independent Movement">
+        <meta name="DESCRIPTION" content="Move around at any frame rate in SDL 2">
+
+        <title>Lazy Foo' Productions - Frame Independent Movement</title>
+
+        <link rel="stylesheet" type="text/css" href="44_frame_independent_movement_files/lazy.css">
+
+    </head>
+
+    <body>
+
+        <div class="header">
+
+<h1 style="margin-bottom:0px;padding-bottom:0px;border-bottom:0px;">Lazy Foo' Productions</h1>
+<div class="nav">
+<a class="nav" href="http://forums.libsdl.org/">SDL Forums</a>
+<a class="nav" href="http://lazyfoo.net/tutorials/SDL/index.php">SDL Tutorials</a>
+<a class="nav" href="http://lazyfoo.net/articles/index.php">Articles</a>
+<a class="nav" href="http://lazyfoo.net/tutorials/OpenGL/index.php">OpenGL Tutorials</a>
+<a class="nav" href="http://www.opengl.org/discussion_boards/forum.php">OpenGL Forums</a>
+<div class="ads">
+<script id="twitter-wjs" src="44_frame_independent_movement_files/widgets.js"></script><script id="facebook-jssdk" src="44_frame_independent_movement_files/sdk.js"></script><script type="text/javascript" async="" src="44_frame_independent_movement_files/ga.js"></script><script type="text/javascript"><!--
+google_ad_client = "pub-5880704953225255";
+google_ad_width = 468;
+google_ad_height = 60;
+google_ad_format = "468x60_as";
+google_ad_type = "text_image";
+google_ad_channel ="";
+google_color_border = "6699CC";
+google_color_bg = "003366";
+google_color_link = "FFFFFF";
+google_color_url = "AECCEB";
+google_color_text = "AECCEB";
+//--></script>
+<script type="text/javascript" src="44_frame_independent_movement_files/show_ads.js">
+</script>
+</div><a class="nav" href="http://lazyfoo.net/index.php">News</a>
+<a class="nav" href="http://lazyfoo.net/faq.php">FAQs</a>
+<!--<a class="nav" href="http://lazyfoo.net/games/index.php">Games</a>-->
+<a class="nav" href="http://lazyfoo.net/contact.php">Contact</a>
+<a class="nav" href="http://lazyfoo.net/donate.php">Donations</a>
+
+</div><script type="text/javascript">
+
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-32350292-1']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+
+</script>
+<!--Init facebook-->
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) return;
+  js = d.createElement(s); js.id = id;
+  js.src = "//connect.facebook.net/en_US/sdk.js#xfbml=1&version=v2.0";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+
+<!--Init twitter-->
+<script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src="https://platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs");</script>
+
+<!--Init google+-->
+<script src="44_frame_independent_movement_files/plusone.js"></script>
+</div>        
+        <div class="content">
+
+            <div class="tutPreface"><h1 class="tutHead">Frame Independent Movement</h1>
+            <div class="tutImg"><img src="44_frame_independent_movement_files/preview.png"></div>
+            <h6>Last Updated 5/26/14</h6>
+			Whether you want to be able to handle unstable frame rates or support
+ multiple frame rates, you can set your movement based on time to make 
+it independent of frame rate.
+            </div>
+            
+
+<div class="tutCode">//The dot that will move around on the screen
+class Dot
+{
+    public:
+        //The dimensions of the dot
+        static const int DOT_WIDTH = 20;
+        static const int DOT_HEIGHT = 20;
+
+        //Maximum axis velocity of the dot
+        static const int DOT_VEL = 640;
+
+        //Initializes the variables
+        Dot();
+
+        //Takes key presses and adjusts the dot's velocity
+        void handleEvent( SDL_Event&amp; e );
+
+        //Moves the dot
+        void move( float timeStep );
+
+        //Shows the dot on the screen
+        void render();
+
+    private:
+        float mPosX, mPosY;
+        float mVelX, mVelY;
+};
+</div>
+
+<div class="tutText">
+The dot class returns adapted for frame independent movement. Notice how
+ the velocity is now 640. The way we did per frame velocity previously 
+would cause this to fly across the
+screen in a single frame. For this demo we're going to base things on 
+time and the standard unit of time is 1 second. 640 pixels per second 
+translates into little more than 10
+pixels per frame in a 60 frames per second application.<br>
+<br>
+In order to move based on frame time, the move function needs to know 
+how much time is moving per frame. This is why the move function takes 
+in a time step which is how much time
+has passed since the last update.<br>
+<br>
+Also notice how the position and velocity are floats instead of 
+integers. If we used integers the motion would be always truncated to 
+the nearest integer which would cause greater
+inaccuracies.
+</div>
+
+
+<div class="tutCode">void Dot::move( float timeStep )
+{
+    //Move the dot left or right
+    mPosX += mVelX * timeStep;
+
+    //If the dot went too far to the left or right
+    if( mPosX &lt; 0 )
+    {
+        mPosX = 0;
+    }
+    else if( mPosX &gt; SCREEN_WIDTH - DOT_WIDTH )
+    {
+        mPosX = SCREEN_WIDTH - DOT_WIDTH;
+    }
+    
+    //Move the dot up or down
+    mPosY += mVelY * timeStep;
+
+    //If the dot went too far up or down
+    if( mPosY &lt; 0 )
+    {
+        mPosY = 0;
+    }
+    else if( mPosY &gt; SCREEN_HEIGHT - DOT_HEIGHT )
+    {
+        mPosY = SCREEN_HEIGHT - DOT_HEIGHT;
+    }
+}
+</div>
+
+<div class="tutText">
+Here is the move function changed for time based movement as opposed to frame based movement.<br>
+<br>
+We update the position by moving it over by velocity * time. Say if we 
+had (for simplicity's sake) a velocity of 600 pixels per second and a 
+time step of 1 60th of a second. This
+means we would move over by 600 * 1/60 pixels or 10 pixels.<br>
+<br>
+Because of the non uniform movement we can't just move back when we go 
+off screen, we have to correct the value to be something on screen.
+</div>
+
+
+<div class="tutCode">void Dot::render()
+{
+    //Show the dot
+    gDotTexture.render( (int)mPosX, (int)mPosY );
+}
+</div>
+
+<div class="tutText">
+To prevent the compiler from barking at us, we convert the positions to integers when rendering the dot.
+</div>
+
+
+<div class="tutCode">            //Main loop flag
+            bool quit = false;
+
+            //Event handler
+            SDL_Event e;
+
+            //The dot that will be moving around on the screen
+            Dot dot;
+
+            //Keeps track of time between steps
+            LTimer stepTimer;
+</div>
+
+<div class="tutText">
+For this demo we disabled vsync to show it can run regardless of the 
+frame rate. In order to know how much time has passed between renders, 
+we need to timer to keep track of the
+time step.
+</div>
+
+
+<div class="tutCode">            //While application is running
+            while( !quit )
+            {
+                //Handle events on queue
+                while( SDL_PollEvent( &amp;e ) != 0 )
+                {
+                    //User requests quit
+                    if( e.type == SDL_QUIT )
+                    {
+                        quit = true;
+                    }
+
+                    //Handle input for the dot
+                    dot.handleEvent( e );
+                }
+
+                //Calculate time step
+                float timeStep = stepTimer.getTicks() / 1000.f;
+
+                //Move for time step
+                dot.move( timeStep );
+
+                //Restart step timer
+                stepTimer.start();
+
+                //Clear screen
+                SDL_SetRenderDrawColor( gRenderer, 0xFF, 0xFF, 0xFF, 0xFF );
+                SDL_RenderClear( gRenderer );
+
+                //Render dot
+                dot.render();
+
+                //Update screen
+                SDL_RenderPresent( gRenderer );
+            }
+</div>
+
+<div class="tutText">
+When we move around the dot we first get the time from the step time so 
+we know how much time has passed since the last time we moved. We turn 
+it from milliseconds into seconds and
+pass it to the move function. After we're done moving we restart the 
+step timer so we'll now how much time has passed for when we need to 
+move again. Finally we render as we
+normally do.<br>
+<br>
+For most of these tutorials, things are simplified to make things easier
+ to digest. For most if not all applications we use time based movement 
+as opposed to frame based movement.
+Even when we have a fixed frame rate, we just use a constant time step. 
+The thing is when using time based movement you run into problems with 
+floating point errors which require
+vector math to fix, and vector math is beyond the scope of this tutorial
+ which is why frame based movement is used for most of the tutorials.
+</div>
+
+
+            <div class="tutFooter">
+            Download the media and source code for this tutorial <a class="tutLink" href="http://lazyfoo.net/tutorials/SDL/44_frame_independent_movement/44_frame_independent_movement.zip">here</a>.<br>
+            <br>
+            <a class="leftNav" href="http://lazyfoo.net/tutorials/SDL/index.php#Frame%20Independent%20Movement">Back to SDL Tutorials</a><br>
+            </div>
+
+        </div>
+
+        <div class="footer">
+
+<div style="text-align: center;">
+<!--Facebook-->
+<span style="line-height: 10px;" class="fb-share-button" data-href="http://lazyfoo.net/" data-type="button_count"></span>
+
+<!--Google+-->
+<g:plus action="share" annotation="bubble" height="20" href="http://lazyfoo.net/"></g:plus>
+
+<!--Twitter-->
+<a style="line-height: 0px;" href="https://twitter.com/share" class="twitter-share-button" data-lang="en">Tweet</a>
+
+</div>
+<div class="nav">
+<a class="nav" href="http://forums.libsdl.org/">SDL Forums</a>
+<a class="nav" href="http://lazyfoo.net/tutorials/SDL/index.php">SDL Tutorials</a>
+<a class="nav" href="http://lazyfoo.net/articles/index.php">Articles</a>
+<a class="nav" href="http://lazyfoo.net/tutorials/OpenGL/index.php">OpenGL Tutorials</a>
+<a class="nav" href="http://www.opengl.org/discussion_boards/forum.php">OpenGL Forums</a>
+<div class="ads">
+<script type="text/javascript"><!--
+google_ad_client = "pub-5880704953225255";
+google_ad_width = 468;
+google_ad_height = 60;
+google_ad_format = "468x60_as";
+google_ad_type = "text_image";
+google_ad_channel ="";
+google_color_border = "6699CC";
+google_color_bg = "003366";
+google_color_link = "FFFFFF";
+google_color_url = "AECCEB";
+google_color_text = "AECCEB";
+//--></script>
+<script type="text/javascript" src="44_frame_independent_movement_files/show_ads.js">
+</script>
+</div><a class="nav" href="http://lazyfoo.net/index.php">News</a>
+<a class="nav" href="http://lazyfoo.net/faq.php">FAQs</a>
+<!--<a class="nav" href="http://lazyfoo.net/games/index.php">Games</a>-->
+<a class="nav" href="http://lazyfoo.net/contact.php">Contact</a>
+<a class="nav" href="http://lazyfoo.net/donate.php">Donations</a>
+
+</div>
+<h6>
+Copyright Lazy Foo' Productions 2004-2017
+</h6>
+
+</div>
+    
+
+</body></html>

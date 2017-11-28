@@ -28,7 +28,7 @@ LTexture gSplashTexture;
 short init()
 {
 	if(SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER) < 0) {
-		SDL_Log("%s(), SDL_Init failed.", __func__);
+		SDL_Log("%s(), SDL_Init failed. %s", __func__, SDL_GetError());
 		return -1;
 	}
 
