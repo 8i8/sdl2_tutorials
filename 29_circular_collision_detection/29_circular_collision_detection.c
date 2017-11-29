@@ -1,8 +1,25 @@
 /*
- * This program demonstrates collision detection using a geometrical shape, in
- * this case a circle.
+ * Circular Collision Detection
  *
- * TODO work over the math in htis example to understand exactly what is
+ * Along with collision boxes, circles are the most common form of collider.
+ * Here we'll be checking collision between two circles and a circle and a box.
+ *
+ * Checking collision between two circles is easy. All you have to do is check
+ * whether the distance between the center of each circle is less than the sum
+ * of their radii (radii is the plural for radius).
+ *
+ * For box/circle collision, you have to find the point on the collision box
+ * that is closest to the center of the circle. If that point is less than the
+ * radius of the circle, there is a collision.
+ *
+ * For this tutorial we have our collision detection functions for
+ * circle/circle and circle/rectangle collisions. We also have a function that
+ * calculates the distance between two points squared.
+ *
+ * Using the distance squared instead of the distance is an optimization we'll
+ * go into more detail later.
+ *
+ * TODO work over the math in this example to understand exactly what is
  * happening and improve the collision detection, as with the pervious example
  * the detection fails when the velocity is greater than one.
  */
@@ -16,6 +33,10 @@
 #define SCREEN_WIDTH	640
 #define SCREEN_HEIGHT	480
 
+/*
+ * SDL has a built in rectangle structure, but we have to make our own circle
+ * structure with a position and radius.
+ */
 typedef struct {
 	int x, y;
 	int r;
@@ -27,6 +48,12 @@ typedef struct {
 	int mHeight;
 } LTexture;
 
+/*
+ * Here is the dot struct from previous collision detection tutorials with some
+ * more additons. The related move function takes in a circle and a rectangle
+ * to check collision against when moving. We also now have a circle collider
+ * instead of a rectangle collider.
+ */
 typedef struct {
 	int mPosX, mPosY;
 	int mVelX, mVelY;
@@ -140,6 +167,10 @@ short LTexture_render(LTexture *lt, int x, int y, SDL_Rect* clip)
 	return SDL_RenderCopy(gRenderer, lt->mTexture, clip, &renderQuad);
 }
 
+/*
+ * The init function takes in a position and initializes the colliders and
+ * velocity.
+ */
 void Dot_init(Dot *d, int x, int y)
 {
 	d->mPosX = x;
@@ -153,30 +184,14 @@ void Dot_init(Dot *d, int x, int y)
 	Dot_shiftColliders(d);
 }
 
-void Dot_handleEvent(Dot *d, SDL_Event *e)
-{
-	if(e->type == SDL_KEYDOWN && e->key.repeat == 0)
-	{
-		switch(e->key.keysym.sym)
-		{
-			case SDLK_UP: 	d->mVelY -= DOT_VEL; break;
-			case SDLK_DOWN: d->mVelY += DOT_VEL; break;
-			case SDLK_LEFT: d->mVelX -= DOT_VEL; break;
-			case SDLK_RIGHT:d->mVelX += DOT_VEL; break;
-		}
-	}
-	else if(e->type == SDL_KEYUP && e->key.repeat == 0)
-	{
-		switch(e->key.keysym.sym)
-		{
-			case SDLK_UP:	d->mVelY += DOT_VEL; break;
-			case SDLK_DOWN:	d->mVelY -= DOT_VEL; break;
-			case SDLK_LEFT: d->mVelX += DOT_VEL; break;
-			case SDLK_RIGHT:d->mVelX -= DOT_VEL; break;
-		}
-	}
-}
-
+/*
+ * Like in previous collision detection tutorials, we move along the x axis,
+ * check collision against the edges of the screen, and check against the other
+ * scene objects. If the dot hit something we move back. As always, whenever
+ * the dot moves its colliders move with it.
+ *
+ * Then we do this again for the y axis.
+ */
 void Dot_move(Dot *d, SDL_Rect *square, Circle *circle)
 {
 	d->mPosX += d->mVelX;
@@ -206,6 +221,12 @@ void Dot_move(Dot *d, SDL_Rect *square, Circle *circle)
 	}
 }
 
+/*
+ * The rendering code is a little different. SDL_Rects have their position at
+ * the top left where our circle structure has the position at the center. This
+ * means we need to offset the render position to the top left of the circle by
+ * subtracting the radius from the x and y position.
+ */
 void Dot_render(Dot *d)
 {
 	LTexture_render(
@@ -215,32 +236,17 @@ void Dot_render(Dot *d)
 			NULL);
 }
 
-void Dot_shiftColliders(Dot *d)
-{
-	d->mCollider.x = d->mPosX;
-	d->mCollider.y = d->mPosY;
-}
-
-short loadMedia()
-{
-	if(LTexture_loadFromFile(&gDotTexture, "dot.bmp") < 0)
-		return -1;
-	return 0;
-}
-
-void close_all()
-{
-	free_texture(&gDotTexture);
-
-	SDL_DestroyRenderer(gRenderer);
-	SDL_DestroyWindow(gWindow);
-	gWindow = NULL;
-	gRenderer = NULL;
-
-	IMG_Quit();
-	SDL_Quit();
-}
-
+/*
+ * Here is our circle to circle collision detector. It simply checks if the
+ * distance squared between the centers is less than the sum of the radii
+ * squared. If it is, there is a collison.
+ *
+ * Why are we using the distance squared as opposed to the plain distance?
+ * Because to calculate the distance involves a square root and calculating a
+ * square root is a relatively expensive operation. Fortunately if x > y then
+ * x^2 > y^2, so we can save a square root operation by just comparing the
+ * distance squared.
+ */
 short check_collision_circ(Circle *a, Circle *b)
 {
 	int totalRadiusSquared = a->r + b->r;
@@ -252,6 +258,29 @@ short check_collision_circ(Circle *a, Circle *b)
 	return 0;
 }
 
+void Dot_shiftColliders(Dot *d)
+{
+	d->mCollider.x = d->mPosX;
+	d->mCollider.y = d->mPosY;
+}
+
+/*
+ * To check if a box and circle collided we need to find the closest point on
+ * the box.
+ *
+ * If the circle's center is to the left of the box, the x position of the
+ * closest point is on the left side of the box.
+ *
+ * If the circle's center is to the right of the box, the x position of the
+ * closest point is on the right side of the box.
+ *
+ * If the circle's center is inside of the box, the x position of the closest
+ * point is the same as the x position of the circle.
+ *
+ * Here we find the closest y position much like we did the x position. If the
+ * distance squared between the closest point on the box and the center of the
+ * circle is less than the circle's radius squared, then there is a collision.
+ */
 short check_collision_rect(Circle *a, SDL_Rect *b)
 {
 	int cX, cY;
@@ -276,6 +305,10 @@ short check_collision_rect(Circle *a, SDL_Rect *b)
 	return 0;
 }
 
+/*
+ * Here is the distance squared function. It's just a distance calculation (
+ * squareRoot( x^2 + y^2 ) ) without the square root.
+ */
 double distanceSquared(int x1, int y1, int x2, int y2)
 {
 	int deltaX = x2 - x1;
@@ -283,6 +316,56 @@ double distanceSquared(int x1, int y1, int x2, int y2)
 	return deltaX*deltaX + deltaY*deltaY;
 }
 
+short loadMedia()
+{
+	if(LTexture_loadFromFile(&gDotTexture, "dot.bmp") < 0)
+		return -1;
+	return 0;
+}
+
+void Dot_handleEvent(Dot *d, SDL_Event *e)
+{
+	if(e->type == SDL_KEYDOWN && e->key.repeat == 0)
+	{
+		switch(e->key.keysym.sym)
+		{
+			case SDLK_UP: 	d->mVelY -= DOT_VEL; break;
+			case SDLK_DOWN: d->mVelY += DOT_VEL; break;
+			case SDLK_LEFT: d->mVelX -= DOT_VEL; break;
+			case SDLK_RIGHT:d->mVelX += DOT_VEL; break;
+		}
+	}
+	else if(e->type == SDL_KEYUP && e->key.repeat == 0)
+	{
+		switch(e->key.keysym.sym)
+		{
+			case SDLK_UP:	d->mVelY += DOT_VEL; break;
+			case SDLK_DOWN:	d->mVelY -= DOT_VEL; break;
+			case SDLK_LEFT: d->mVelX += DOT_VEL; break;
+			case SDLK_RIGHT:d->mVelX -= DOT_VEL; break;
+		}
+	}
+}
+
+void close_all()
+{
+	free_texture(&gDotTexture);
+
+	SDL_DestroyRenderer(gRenderer);
+	SDL_DestroyWindow(gWindow);
+	gWindow = NULL;
+	gRenderer = NULL;
+
+	IMG_Quit();
+	SDL_Quit();
+}
+
+/*
+ * Before we enter the main loop we define the scene objects.
+ *
+ * Finally in our main loop we handle input, move the dot with collision check
+ * and render the scene objects to the screen.
+ */
 int main(int argc, char* argv[])
 {
 	if(init())

@@ -1,16 +1,16 @@
 /*
- * This program demonstrates the use of timing with SDL using SDL_GetTicks().
- * Returns an unsigned 32-bit value representing the number of milliseconds
- * since the SDL library initialized.
- * https://wiki.libsdl.org/SDL_GetTicks
+ * Timing
+ *
+ * Another important part of any sort of gaming API is the ability to handle
+ * time. In this tutorial we'll make a timer we can restart.
  */
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
 #include <SDL2/SDL_ttf.h>
 #include <stdio.h>
 
-const int SCREEN_WIDTH = 640;
-const int SCREEN_HEIGHT = 480;
+#define SCREEN_WIDTH	640
+#define SCREEN_HEIGHT	480
 
 typedef struct {
 	SDL_Texture *mTexture;
@@ -179,6 +179,13 @@ int LTexture_getHeight(LTexture *lt)
 	return lt->mHeight;
 }
 
+/*
+ * As mentioned in the font rendering tutorial, you want to minimize the amount
+ * of times you render text. We'll have a texture to prompt input and a texture
+ * to display the current time in milliseconds. The time texture changes every
+ * frame so we have to render that every frame, but the prompt texture doesn't
+ * change so we can render it once in the file loading function.
+ */
 short loadMedia()
 {
 	gFont = TTF_OpenFont("lazy.ttf", 28);
@@ -217,6 +224,16 @@ void close_all()
 	SDL_Quit();
 }
 
+/*
+ * Before we enter the main loop we want to declare some variables. The two we
+ * want to pay attention to is the startTime variable (which is an Unsigned
+ * integer that's 32bits) and the timeText variable which is a string stream.
+ *
+ * For those of you who have never used string streams, just know that they
+ * function like iostreams only instead of reading or writing to the console,
+ * they allow you to read and write to a string in memory. It'll be easier to
+ * see when we see them used further on in the program.
+ */
 int main(int argc, char *argv[])
 {
 	SDL_Event e;
@@ -245,7 +262,24 @@ int main(int argc, char *argv[])
 					&& e.key.keysym.sym == SDLK_RETURN)
 				startTime = SDL_GetTicks();
 		}
-
+/*
+ * There's a function called SDL_GetTicks which returns the time since the
+ * program started in milliseconds. For this demo, we'll be having a timer that
+ * restarts every time we press the return key.
+ *
+ * Remember how we initialized the start time to 0 at the start of the program?
+ * This means the timer's time is just the current time since the program
+ * started returned by SDL_GetTicks. If we were to restart the timer when
+ * SDL_GetTicks was at 5000 milliseconds (5 seconds), then at 10,000
+ * milliseconds the current time - the start time would be 10000 minus 5000
+ * would be 5000 milliseconds. So even though the timer contained by
+ * SDL_GetTicks hasn't restarted, we can have a timer keep track of a relative
+ * start time and reset its start time. 
+ */
+/*
+ * Here we're using sprintf to fill timeText witf 'time' text and then the time
+ * since the timer started minus the currnet ticksvalue.
+ */
 		sprintf(timeText, "%s %u", text, SDL_GetTicks() - startTime);
 
 		if(LTexture_loadFromRenderedText(
@@ -260,6 +294,10 @@ int main(int argc, char *argv[])
 				(SCREEN_WIDTH - LTexture_getWidth(
 						&gPromptTextTexture)) / 2,
 				0, NULL, 0.0, NULL, SDL_FLIP_NONE);
+/*
+ * Now that we have the time in a string, we can use it to render the current
+ * time to a texture.
+ */
 		LTexture_render(
 				&gTimeTextTexture,
 				(SCREEN_WIDTH - LTexture_getWidth(
@@ -267,6 +305,9 @@ int main(int argc, char *argv[])
 				(SCREEN_HEIGHT - LTexture_getHeight(
 						&gPromptTextTexture)) / 2,
 				NULL, 0.0, NULL, SDL_FLIP_NONE);
+/*
+ * Finally we render the prompt texture and the time texture to the screen.
+ */
 		SDL_RenderPresent(gRenderer);
 	}
 equit:

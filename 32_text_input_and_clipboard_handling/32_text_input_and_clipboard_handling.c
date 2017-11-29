@@ -1,5 +1,8 @@
 /*
- * This program demonstrates the use of the clipboard for text input.
+ * Text Input And Clipboard Handling
+ *
+ * Getting text input from the keyboard is a common task in games. Here we'll
+ * be getting text using SDL 2's new text input and clip board handling.
  */
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_ttf.h>
@@ -130,6 +133,10 @@ short loadMedia()
 	return 0;
 }
 
+/*
+ * Once we're done with text input we disable it since enabling text input
+ * introduces some overhead.
+ */
 void close_all()
 {
 	free_texture(&gPromptTextTexture);
@@ -147,6 +154,18 @@ void close_all()
 	SDL_Quit();
 }
 
+/*
+ * There are a couple special key presses we want to handle. When the user
+ * presses back space we want to remove the last character from the string.
+ *
+ * When the user is holding control and presses c, we want to copy the current
+ * text to the clip board using SDL_SetClipboardText. You can check if the ctrl
+ * key is being held using SDL_GetModState.
+ *
+ * When the user does ctrl + v, we want to get the text from the clip board
+ * using SDL_GetClipboardText. Also notice that whenever we alter the contents
+ * of the string we set the text update flag.
+ */
 short get_input(SDL_Event *e, char *inputText)
 {
 	int len = 0;
@@ -168,6 +187,14 @@ short get_input(SDL_Event *e, char *inputText)
 			return 1;
 		}
 	}
+/*
+ * With text input enabled, your key presses will also generate
+ * SDL_TextInputEvents which simplifies things like shift key and caps lock.
+ * Here we first want to check that we're not getting a ctrl and c/v event
+ * because we want to ignore those since they are already handled as keydown
+ * events. If it isn't a copy or paste event, we append the character to our
+ * input string.
+ */
 	else if(e->type == SDL_TEXTINPUT) {
 		if(
 					((e->text.text[0] == 'c'
@@ -185,6 +212,16 @@ short get_input(SDL_Event *e, char *inputText)
 	return 0;
 }
 
+/*
+ * Before we go into the main loop we declare a string to hold our text and
+ * render it to a texture. We then call SDL_StartTextInput so the SDL text
+ * th text input enabled, your key presses will also generate
+ * SDL_TextInputEvents which simplifies things like shift key and caps lock.
+ * Here we first want to check that we're not getting a ctrl and c/v event
+ * because we want to ignore those since they are already handled as keydown
+ * events. If it isn't a copy or paste event, we append the character to our
+ * input string.input functionality is enabled.
+ */
 int main(int argc, char* argv[])
 {
 	if(init())
@@ -201,7 +238,10 @@ int main(int argc, char* argv[])
 			&gInputTextTexture, inputText, textColor);
 
 	SDL_StartTextInput();
-
+/*
+ * We only want to update the input text texture when we need to so we have a
+ * flag that keeps track of whether we need to update the texture.
+ */
 	while(1)
 	{
 		short renderText = 0;
@@ -212,7 +252,12 @@ int main(int argc, char* argv[])
 
 			renderText = get_input(&e, inputText);
 		}
-
+/*
+ * If the text render update flag has been set, we rerender the texture. One
+ * little hack we have here is if we have an empty string, we render a space
+ * because SDL_ttf will not render an empty string.
+ * At the end of the main loop we render the prompt text and the input text.
+ */
 		if(renderText) {
 			if(strcmp(inputText, ""))
 				LTexture_loadFromRenderedText(

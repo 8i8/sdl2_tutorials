@@ -1,8 +1,7 @@
-OBJS = 37_multiple_displays.cpp
+OBJS = 37_multiple_displays.c
 
-CC = g++
+CC = gcc
 
-#
 COMPILER_FLAGS = -g -Wall -Wextra -pedantic -fsanitize=address -fno-omit-frame-pointer
 
 LINKER_FLAGS = -lSDL2

@@ -1,5 +1,8 @@
 /*
- * This program demonstrates texture streaming.
+ * Texture Streaming
+ *
+ * Sometime we want to render pixel data from a source other than a bitmap like
+ * a web cam. Using texture stream we can render pixels from any source.
  */
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
@@ -10,6 +13,12 @@
 #define SCREEN_WIDTH	640
 #define SCREEN_HEIGHT	480
 
+/*
+ * Here we're add more functionality to our texture struct with more related
+ * functions. The createBlank function allocates a blank texture that we can
+ * copy data to when streaming. The copyPixels function copies in the pixel
+ * data we want to stream.
+ */
 typedef struct {
 	SDL_Texture* mTexture;
 	void* mPixels;
@@ -18,6 +27,15 @@ typedef struct {
 	int mHeight;
 } LTexture;
 
+/*
+ * Here is our data stream class. We won't go deep into how it works because we
+ * don't really care. When dealing with web cam, video decoding, etc APIs they
+ * typically don't go deep into how they work because all we care about is
+ * getting the video and audio data from them.
+ *
+ * All we really care about is that getBuffer function which gets the current
+ * pixels from the data buffer.
+ */
 typedef struct {
 	SDL_Surface* mImages[IMG_NUM];
 	int mCurrentImage;
@@ -83,6 +101,12 @@ void LTexture_free(LTexture *lt)
 	}
 }
 
+/*
+ * As you can see, all this function does is create a 32bit RGBA texture with
+ * stream access. One thing you have to make sure of when creating your texture
+ * is that the format of the texture pixels matches the format of the pixels
+ * we're streaming. 
+ */
 short LTexture_createBlank(LTexture *lt, int width, int height)
 {
 	lt->mTexture = SDL_CreateTexture(
@@ -160,6 +184,11 @@ short LTexture_unlockTexture(LTexture *lt)
 	return 0;
 }
 
+/*
+ * Here is our function to copy in the pixels from the stream. The function
+ * assumes the texture is locked and that the pixels are from an image the same
+ * size as the texture.
+ */
 void LTexture_copyPixels(LTexture *lt, void* pixels)
 {
 	if(lt->mPixels != NULL)
@@ -246,6 +275,15 @@ void close_all()
 	SDL_Quit();
 }
 
+/*
+ * In the main loop rendering we lock our stream texture, copy the pixels from
+ * the stream and then unlock the texture. With our texture holding the latest
+ * image from the stream, we render the image to the screen.
+ *
+ * When dealing with decoding APIs things may get trickier where we have to
+ * convert from one format to another but ultimately all we need is a means to
+ * get the pixel data and copy it to the screen.
+ */
 int main(int argc, char* args[])
 {
 	if(init())

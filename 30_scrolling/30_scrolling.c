@@ -1,19 +1,34 @@
 /*
- * This program demonstrates a scrolling background.
+ * Scrolling
+ *
+ * Up until now we've only been deal with levels the size of the screen. With
+ * scrolling you can navigate through levels of any size by rendering
+ * everything relative to a camera.
+ *
+ * The basic principle of scrolling is that you have a rectangle that functions
+ * as a camera:
+ *
+ * And then you only render what's in the camera, which usually involves
+ * rendering things relative to the camera or only showing portions of objects
+ * inside the camera.
  */
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
 #include <stdio.h>
 
-const int LEVEL_WIDTH = 1280;
-const int LEVEL_HEIGHT = 960;
+/*
+ * Since the level is no longer the size of the screen we have to have a
+ * separate set of constants to define the level size.
+ */
+#define LEVEL_WIDTH	1280
+#define LEVEL_HEIGHT	960
 
-const int SCREEN_WIDTH = 640;
-const int SCREEN_HEIGHT = 480;
+#define SCREEN_WIDTH	640
+#define SCREEN_HEIGHT	480
 
-const int DOT_WIDTH = 20;
-const int DOT_HEIGHT = 20;
-const int DOT_VEL = 5;
+#define DOT_WIDTH	20
+#define DOT_HEIGHT	20
+#define DOT_VEL		5
 
 typedef struct {
 	SDL_Texture *mTexture;
@@ -162,6 +177,11 @@ void Dot_handleEvent(Dot *d, SDL_Event *e)
 	}
 }
 
+/*
+ * This time when moving the dot, we check if the dot moved off the level as
+ * opposed to checking if it moved off the screen since the screen is going to
+ * move around the level.
+ */
 void Dot_move(Dot *d)
 {
 	d->mPosX += d->mVelX;
@@ -175,6 +195,13 @@ void Dot_move(Dot *d)
 		d->mPosY -= d->mVelY;
 }
 
+/*
+ * This time the dot has to render relative to the camera, so its rendering
+ * function takes in a camera position.
+ *
+ * Now when we render objects to the screen, we render them relative to the
+ * camera by subtracting the camera offset.
+ */
 void Dot_render(Dot *d, int camX, int camY)
 {
 	LTexture_render(&gDotTexture, d->mPosX - camX, d->mPosY - camY, NULL);
@@ -205,6 +232,10 @@ void close_all()
 	SDL_Quit();
 }
 
+/*
+ * Before we go into the main loop, we declare the dot and the camera that is
+ * going to be following it.
+ */
 int main(int argc, char* argv[])
 {
 	if(init())
@@ -228,7 +259,11 @@ int main(int argc, char* argv[])
 		}
 
 		Dot_move(&dot);
-
+/*
+ * After we move the dot, we want to change the camera position to center over
+ * it. We don't want the camera to go outside of the level so we keep it in
+ * bounds after moving it.
+ */
 		camera.x = (dot.mPosX + DOT_WIDTH / 2) - SCREEN_WIDTH / 2;
 		camera.y = (dot.mPosY + DOT_HEIGHT / 2) - SCREEN_HEIGHT / 2;
 
@@ -240,7 +275,10 @@ int main(int argc, char* argv[])
 		       camera.x = LEVEL_WIDTH - camera.w;
 		if(camera.y > LEVEL_HEIGHT - camera.h)
 			camera.y = LEVEL_HEIGHT - camera.h;
-
+/*
+ * After the camera is in place we render the portion of the background that is
+ * inside that camera and then render the dot relative to the camera position.
+ */
 		SDL_SetRenderDrawColor(gRenderer, 0xFF, 0xFF, 0xFF, 0xFF);
 		SDL_RenderClear(gRenderer);
 

@@ -1,5 +1,8 @@
 /*
- * This program demonstrates how to calculate frame rate.
+ * Calculating Frame Rate
+ *
+ * Now that we know how to make a timer with SDL it's time to put it to use.
+ * We're going to use the timer to measure fps.
  */
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
@@ -213,6 +216,12 @@ void close_all()
 	SDL_Quit();
 }
 
+/*
+ * In order to calculate the frames per second, we need to keep track of the
+ * number of frames rendered and the number of second passed. Before we enter
+ * the main loop, we start a timer used to calculate fps and declare a variable
+ * to keep track of the number of frames rendered.
+ */
 int main(int argc, char* args[])
 {
 	char *text = "Average Frames Per Second ";
@@ -239,7 +248,12 @@ int main(int argc, char* args[])
 		while(SDL_PollEvent( &e ) != 0)
 			if(e.type == SDL_QUIT)
 				goto equit;
-
+/*
+ * To calculate frames per second, you just take the number of rendered frames
+ * and divide it by the seconds passed. Now it is possible for there to be a
+ * very small amount of time passed for the first frame and have it give us a
+ * really high fps. This is why we correct the value if it is really high.
+ */
 		avgFPS = countedFrames / (LTimer_getTicks(&fpsTimer) / 1000.f);
 		if(avgFPS > 2000000)
 			avgFPS = 0;
@@ -249,7 +263,14 @@ int main(int argc, char* args[])
 		if(LTexture_loadFromRenderedText(
 					&gFPSTextTexture, timeText, textColor))
 			goto equit;
-
+/*
+ * After calculating the fps, we render the value as a texture to the screen.
+ * After we're done rendering the scene, we increment the frame counter.
+ *
+ * Since this program is vsynced, it is probably going to report 60 fps. If you
+ * want to find out how much you hardware can do, just create a renderer
+ * without vsync.
+ */
 		SDL_SetRenderDrawColor(gRenderer, 0xFF, 0xFF, 0xFF, 0xFF);
 		SDL_RenderClear(gRenderer);
 

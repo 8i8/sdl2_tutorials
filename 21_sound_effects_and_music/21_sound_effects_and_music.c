@@ -1,14 +1,14 @@
 /*
- * This program demonstrates the playing of audio files it uses the following
- * functions to achieve this.
+ * Sound Effects and Music
  *
- * http://sdl.beuc.net/sdl.wiki/Mix_GetError
- * http://sdl.beuc.net/sdl.wiki/Mix_LoadWAV
- * http://sdl.beuc.net/sdl.wiki/Mix_PlayChannel
- * http://sdl.beuc.net/sdl.wiki/Mix_PlayingMusic
- * http://sdl.beuc.net/sdl.wiki/Mix_PausedMusic
- * http://sdl.beuc.net/sdl.wiki/Mix_ResumeMusic
- * http://sdl.beuc.net/sdl.wiki/Mix_PauseMusic
+ * Up until now we've only been dealing with video and input. Most games made
+ * require some sort of sound and here we'll be using SDL_mixer to play audio
+ * for us.
+ *
+ * SDL_mixer is a library we use to make audio playing easier (because it can
+ * get complicated). We have to set it up just like we set up SDL_image. Like
+ * before, it's just a matter of having the headers files, library files, and
+ * binary files in the right place with your compiler configured to use them.
  */
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
@@ -27,13 +27,22 @@ typedef struct {
 SDL_Window* gWindow = NULL;
 SDL_Renderer* gRenderer = NULL;
 LTexture gPromptTexture;
-Mix_Music *gMusic = NULL;
 
+/*
+ * The SDL_mixer data type for music is Mix_Music and one short sounds is
+ * Mix_Chunk. Here we declare pointers for the music and sound effects we'll be
+ * using.
+ */
+Mix_Music *gMusic = NULL;
 Mix_Chunk *gScratch = NULL;
 Mix_Chunk *gHigh = NULL;
 Mix_Chunk *gMedium = NULL;
 Mix_Chunk *gLow = NULL;
 
+/*
+ * Since we're using music and sound effects, we need to initialize audio along
+ * with video for this demo.
+ */
 short init()
 {
 	if(SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) < 0) {
@@ -69,7 +78,18 @@ short init()
 		SDL_Log("%s(), IMG_Init failed.", __func__);
 		return -1;
 	}
-
+/*
+ * To initialize SDL_mixer we need to call Mix_OpenAudio. The first argument
+ * sets the sound frequency, and 44100 is a standard frequency that works on
+ * most systems. The second argument determines the sample format, which again
+ * here we're using the default. The third argument is the number of hardware
+ * channels, and here we're using 2 channels for stereo. The last argument is
+ * the sample size, which determines the size of the chunks we use when playing
+ * sound. 2048 bytes (AKA 2 kilobyes) worked fine for me, but you may have to
+ * experiment with this value to minimize lag when playing sounds.
+ *
+ * If there's any errors with SDL_mixer, they're reported with Mix_GetError.
+ */
 	if(Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048) < 0) {
 		SDL_Log("%s(), Mix_OpenAudioSDL_mixer could not initiled. %s",
 				__func__, Mix_GetError());
@@ -131,6 +151,12 @@ short LTexture_render(LTexture *lt)
 	return SDL_RenderCopy(gRenderer, lt->mTexture, NULL, NULL);
 }
 
+/*
+ * Here we load our splash texture and sound.
+ *
+ * To load music we call Mix_LoadMUS and to load sound effect we call
+ * Mix_LoadWAV.
+ */
 short loadMedia()
 {
 	if(LTexture_loadFromFile(&gPromptTexture, "prompt.png"))
@@ -169,6 +195,11 @@ short loadMedia()
 	return 0;
 }
 
+/*
+ * When we're done with audio and want to free it, we call Mix_FreeMusic to
+ * free music and Mix_FreeChunk to free a sound effect. We call Mix_Quit to
+ * close down SDL_mixer.
+ */
 void close_all()
 {
 	free_texture(&gPromptTexture);
@@ -195,6 +226,36 @@ void close_all()
 	SDL_Quit();
 }
 
+/*
+ * In the event loop, we play a sound effect when the 1, 2, 3, or 4 keys are
+ * pressed. The way to play a Mix_Chunk is by calling Mix_PlayChannel. The
+ * first argument is the channel you want to use to play it. Since we don't
+ * care which channel it comes out of, we set the channel to negative 1 which
+ * will use the nearest available channel. The second argument is the sound
+ * effect and last argument is the number of times to repeat the effect. We
+ * only want it to play once per button press, so we have it repeat 0 times.
+ *
+ * A channel in this case is not the same as a hardware channel that can
+ * represent the left and right channel of a stereo system. Every sound effect
+ * that's played has a channel associated with it. When you want to pause or
+ * stop an effect that is play, you can halt its channel.
+ */
+/*
+ * For this demo, we want to play/pause the music on a 9 keypress and stop the
+ * music on a 0 keypress.
+ *
+ * When the 9 key pressed we first check if the music is not playing with
+ * Mix_PlayingMusic. If it isn't, we start the music with Mix_PlayMusic. The
+ * first argument is the music we want to play and the last argument is the
+ * number of times to repeat it. Negative 1 is a special value saying we want
+ * to loop it until it is stopped.
+ *
+ * If there is music playing, we check if the music is paused using
+ * Mix_PausedMusic. If the music is paused, we resume it using Mix_ResumeMusic.
+ * If the music is not paused we pause it using Mix_PauseMusic.
+ *
+ * When 0 is pressed, we stop music if it playing using Mix_HaltMusic.
+ */
 void get_key_pressed(SDL_Event *e)
 {
 	switch(e->key.keysym.sym)

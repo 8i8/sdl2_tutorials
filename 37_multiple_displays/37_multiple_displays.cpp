@@ -21,7 +21,7 @@ class LWindow
 		bool init();
 
 		//Handles window events
-		void handleEvent( SDL_Event& e );
+		void handleEvent(SDL_Event& e);
 
 		//Focuses on window
 		void focus();
@@ -46,7 +46,7 @@ class LWindow
 		//Window data
 		SDL_Window* mWindow;
 		SDL_Renderer* mRenderer;
-		int mWindowID;
+		unsigned mWindowID;
 		int mWindowDisplayID;
 
 		//Window dimensions
@@ -60,12 +60,6 @@ class LWindow
 		bool mMinimized;
 		bool mShown;
 };
-
-//Starts up SDL and creates window
-bool init();
-
-//Frees media and shuts down SDL
-void close();
 
 //Our custom window
 LWindow gWindow;
@@ -94,56 +88,64 @@ LWindow::LWindow()
 bool LWindow::init()
 {
 	//Create window
-	mWindow = SDL_CreateWindow( "SDL Tutorial", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE );
-	if( mWindow != NULL )
-	{
-		mMouseFocus = true;
-		mKeyboardFocus = true;
-		mWidth = SCREEN_WIDTH;
-		mHeight = SCREEN_HEIGHT;
+	mWindow = SDL_CreateWindow(
+					"SDL Tutorial",
+					SDL_WINDOWPOS_UNDEFINED,
+					SDL_WINDOWPOS_UNDEFINED,
+					SCREEN_WIDTH,
+					SCREEN_HEIGHT,
+					SDL_WINDOW_SHOWN
+					| SDL_WINDOW_RESIZABLE);
+	if(mWindow == NULL)
+		printf("Window could not be created! SDL Error: %s\n",
+				SDL_GetError());
 
-		//Create renderer for window
-		mRenderer = SDL_CreateRenderer( mWindow, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC );
-		if( mRenderer == NULL )
-		{
-			printf( "Renderer could not be created! SDL Error: %s\n", SDL_GetError() );
-			SDL_DestroyWindow( mWindow );
-			mWindow = NULL;
-		}
-		else
-		{
-			//Initialize renderer color
-			SDL_SetRenderDrawColor( mRenderer, 0xFF, 0xFF, 0xFF, 0xFF );
+	mMouseFocus = true;
+	mKeyboardFocus = true;
+	mWidth = SCREEN_WIDTH;
+	mHeight = SCREEN_HEIGHT;
 
-			//Grab window identifiers
-			mWindowID = SDL_GetWindowID( mWindow );
-			mWindowDisplayID = SDL_GetWindowDisplayIndex( mWindow );
-
-			//Flag as opened
-			mShown = true;
-		}
-	}
-	else
-	{
-		printf( "Window could not be created! SDL Error: %s\n", SDL_GetError() );
+	//Create renderer for window
+	mRenderer = SDL_CreateRenderer(
+					mWindow,
+					-1,
+					SDL_RENDERER_ACCELERATED
+					| SDL_RENDERER_PRESENTVSYNC);
+	if(mRenderer == NULL) {
+		printf("Renderer could not be created! SDL Error: %s\n",
+				SDL_GetError());
+		SDL_DestroyWindow(mWindow);
+		mWindow = NULL;
+		return -1;
 	}
 
-	return mWindow != NULL && mRenderer != NULL;
+	//Initialize renderer color
+	SDL_SetRenderDrawColor(mRenderer, 0xFF, 0xFF, 0xFF, 0xFF);
+
+	//Grab window identifiers
+	mWindowID = SDL_GetWindowID(mWindow);
+	mWindowDisplayID = SDL_GetWindowDisplayIndex(mWindow);
+
+	//Flag as opened
+	mShown = true;
+
+	return 0;
+
 }
 
-void LWindow::handleEvent( SDL_Event& e )
+void LWindow::handleEvent(SDL_Event& e)
 {
 	//Caption update flag
 	bool updateCaption = false;
 
 	//If an event was detected for this window
-	if( e.type == SDL_WINDOWEVENT && e.window.windowID == mWindowID )
+	if(e.type == SDL_WINDOWEVENT && e.window.windowID == mWindowID)
 	{
-		switch( e.window.event )
+		switch(e.window.event)
 		{
 			//Window moved
 			case SDL_WINDOWEVENT_MOVED:
-			mWindowDisplayID = SDL_GetWindowDisplayIndex( mWindow );
+			mWindowDisplayID = SDL_GetWindowDisplayIndex(mWindow);
 			updateCaption = true;
 			break;
 
@@ -161,12 +163,12 @@ void LWindow::handleEvent( SDL_Event& e )
 			case SDL_WINDOWEVENT_SIZE_CHANGED:
 			mWidth = e.window.data1;
 			mHeight = e.window.data2;
-			SDL_RenderPresent( mRenderer );
+			SDL_RenderPresent(mRenderer);
 			break;
 
 			//Repaint on expose
 			case SDL_WINDOWEVENT_EXPOSED:
-			SDL_RenderPresent( mRenderer );
+			SDL_RenderPresent(mRenderer);
 			break;
 
 			//Mouse enter
@@ -195,32 +197,32 @@ void LWindow::handleEvent( SDL_Event& e )
 
 			//Window minimized
 			case SDL_WINDOWEVENT_MINIMIZED:
-            mMinimized = true;
-            break;
+			mMinimized = true;
+			break;
 
 			//Window maxized
 			case SDL_WINDOWEVENT_MAXIMIZED:
 			mMinimized = false;
-            break;
+			break;
 			
 			//Window restored
 			case SDL_WINDOWEVENT_RESTORED:
 			mMinimized = false;
-            break;
+			break;
 
 			//Hide on close
 			case SDL_WINDOWEVENT_CLOSE:
-			SDL_HideWindow( mWindow );
+			SDL_HideWindow(mWindow);
 			break;
 		}
 	}
-	else if( e.type == SDL_KEYDOWN )
+	else if(e.type == SDL_KEYDOWN)
 	{
 		//Display change flag
 		bool switchDisplay = false;
 
 		//Cycle through displays on up/down
-		switch( e.key.keysym.sym )
+		switch(e.key.keysym.sym)
 		{
 			case SDLK_UP:
 			++mWindowDisplayID;
@@ -234,64 +236,67 @@ void LWindow::handleEvent( SDL_Event& e )
 		}
 
 		//Display needs to be updated
-		if( switchDisplay )
+		if(switchDisplay)
 		{
 			//Bound display index
-			if( mWindowDisplayID < 0 )
+			if(mWindowDisplayID < 0)
 			{
 				mWindowDisplayID = gTotalDisplays - 1;
 			}
-			else if( mWindowDisplayID >= gTotalDisplays )
+			else if(mWindowDisplayID >= gTotalDisplays)
 			{
 				mWindowDisplayID = 0;
 			}
 
 			//Move window to center of next display
-			SDL_SetWindowPosition( mWindow, gDisplayBounds[ mWindowDisplayID ].x + ( gDisplayBounds[ mWindowDisplayID ].w - mWidth ) / 2, gDisplayBounds[ mWindowDisplayID ].y + ( gDisplayBounds[ mWindowDisplayID ].h - mHeight ) / 2 );
+			SDL_SetWindowPosition(
+					mWindow,
+					gDisplayBounds[mWindowDisplayID].x
+					+ (gDisplayBounds[mWindowDisplayID].w - mWidth) / 2,
+					gDisplayBounds[mWindowDisplayID].y
+					+ (gDisplayBounds[mWindowDisplayID].h - mHeight) / 2);
 			updateCaption = true;
 		}
 	}
 
 	//Update window caption with new data
-	if( updateCaption )
+	if(updateCaption)
 	{
 		std::stringstream caption;
-		caption << "SDL Tutorial - ID: " << mWindowID << " Display: " << mWindowDisplayID << " MouseFocus:" << ( ( mMouseFocus ) ? "On" : "Off" ) << " KeyboardFocus:" << ( ( mKeyboardFocus ) ? "On" : "Off" );
-		SDL_SetWindowTitle( mWindow, caption.str().c_str() );
+		caption << "SDL Tutorial - ID: " << mWindowID
+			<< " Display: " << mWindowDisplayID
+			<< " MouseFocus:" << ((mMouseFocus) ? "On" : "Off")
+			<< " KeyboardFocus:" << ((mKeyboardFocus) ? "On" : "Off");
+		SDL_SetWindowTitle(mWindow, caption.str().c_str());
 	}
 }
 
 void LWindow::focus()
 {
 	//Restore window if needed
-	if( !mShown )
-	{
-		SDL_ShowWindow( mWindow );
-	}
+	if(mShown == 0)
+		SDL_ShowWindow(mWindow);
 
 	//Move window forward
-	SDL_RaiseWindow( mWindow );
+	SDL_RaiseWindow(mWindow);
 }
 
 void LWindow::render()
 {
-	if( !mMinimized )
-	{	
+	if(mMinimized == 0) {	
 		//Clear screen
-		SDL_SetRenderDrawColor( mRenderer, 0xFF, 0xFF, 0xFF, 0xFF );
-		SDL_RenderClear( mRenderer );
+		SDL_SetRenderDrawColor(mRenderer, 0xFF, 0xFF, 0xFF, 0xFF);
+		SDL_RenderClear(mRenderer);
 
 		//Update screen
-		SDL_RenderPresent( mRenderer );
+		SDL_RenderPresent(mRenderer);
 	}
 }
 
 void LWindow::free()
 {
-	if( mWindow != NULL )
-	{
-		SDL_DestroyWindow( mWindow );
-	}
+	if(mWindow != NULL)
+		SDL_DestroyWindow(mWindow);
 
 	mMouseFocus = false;
 	mKeyboardFocus = false;
@@ -331,49 +336,37 @@ bool LWindow::isShown()
 
 bool init()
 {
-	//Initialization flag
-	bool success = true;
-
 	//Initialize SDL
-	if( SDL_Init( SDL_INIT_VIDEO ) < 0 )
-	{
-		printf( "SDL could not initialize! SDL Error: %s\n", SDL_GetError() );
-		success = false;
-	}
-	else
-	{
-		//Set texture filtering to linear
-		if( !SDL_SetHint( SDL_HINT_RENDER_SCALE_QUALITY, "1" ) )
-		{
-			printf( "Warning: Linear texture filtering not enabled!" );
-		}
-
-		//Get number of displays
-		gTotalDisplays = SDL_GetNumVideoDisplays();
-		if( gTotalDisplays < 2 )
-		{
-			printf( "Warning: Only one display connected!" );
-		}
-		
-		//Get bounds of each display
-		gDisplayBounds = new SDL_Rect[ gTotalDisplays ];
-		for( int i = 0; i < gTotalDisplays; ++i )
-		{
-			SDL_GetDisplayBounds( i, &gDisplayBounds[ i ] );
-		}
-
-		//Create window
-		if( !gWindow.init() )
-		{
-			printf( "Window could not be created!\n" );
-			success = false;
-		}
+	if(SDL_Init(SDL_INIT_VIDEO) < 0) {
+		printf("SDL could not initialize! SDL Error: %s\n",
+				SDL_GetError());
+		return -1;
 	}
 
-	return success;
+	//Set texture filtering to linear
+	if(SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "1") == 0)
+		printf("Warning: Linear texture filtering not enabled!");
+
+	//Get number of displays
+	gTotalDisplays = SDL_GetNumVideoDisplays();
+	if(gTotalDisplays < 2)
+		printf("Warning: Only one display connected!");
+	
+	//Get bounds of each display
+	gDisplayBounds = new SDL_Rect[gTotalDisplays];
+	for(int i = 0; i < gTotalDisplays; ++i)
+		SDL_GetDisplayBounds(i, &gDisplayBounds[i]);
+
+	//Create window
+	if(gWindow.init() < 0) {
+		printf("Window could not be created!\n");
+		return -1;
+	}
+
+	return 0;
 }
 
-void close()
+void close_all()
 {
 	//Destroy window
 	gWindow.free();
@@ -386,44 +379,36 @@ void close()
 	SDL_Quit();
 }
 
-int main( int argc, char* args[] )
+int main(int argc, char* args[])
 {
 	//Start up SDL and create window
-	if( !init() )
-	{
-		printf( "Failed to initialize!\n" );
-	}
-	else
-	{
-		//Main loop flag
-		bool quit = false;
+	if(init())
+		goto equit;
 
-		//Event handler
-		SDL_Event e;
+	//Event handler
+	SDL_Event e;
 
-		//While application is running
-		while( !quit )
+	//While application is running
+	while(1)
+	{
+		//Handle events on queue
+		while(SDL_PollEvent(&e) != 0)
 		{
-			//Handle events on queue
-			while( SDL_PollEvent( &e ) != 0 )
-			{
-				//User requests quit
-				if( e.type == SDL_QUIT )
-				{
-					quit = true;
-				}
+			//User requests quit
+			if(e.type == SDL_QUIT)
+				goto equit;
 
-				//Handle window events
-				gWindow.handleEvent( e );
-			}
-
-			//Update window
-			gWindow.render();
+			//Handle window events
+			gWindow.handleEvent(e);
 		}
-	}
 
+		//Update window
+		gWindow.render();
+	}
+equit:
 	//Free resources and close SDL
-	close();
+	close_all();
 
 	return 0;
 }
+

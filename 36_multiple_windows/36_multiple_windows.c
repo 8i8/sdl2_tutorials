@@ -1,5 +1,17 @@
 /*
- * This program demonstrated the use of multiple windows.
+ * Multiple Windows
+ *
+ * One of the new features SDL 2 has is being able to handle multiple windows
+ * at once. In this tutorial we'll be moving around 3 resizable windows.
+ *
+ * Here is our window wrapper from before with a few adjustments. We want to be
+ * able to grab focus and we want to tell if the window is shown so we add
+ * functions to do that.
+ *
+ * Each window is going to have their own renderer so we add a member variable
+ * for that. We also keep track of the window ID to tell which events belong to
+ * which window and we also added a flag to keep track of whether the window is
+ * shown.
  */
 #include <SDL2/SDL.h>
 #include <stdio.h>
@@ -23,6 +35,9 @@ typedef struct {
 	short mShown;
 } LWindow;
 
+/*
+ * For this program we'll have 3 globally allocated windows.
+ */
 LWindow gWindows[TOTAL_WINDOWS];
 
 void LWindow_new(LWindow *w)
@@ -40,20 +55,29 @@ void LWindow_new(LWindow *w)
 	w->mHeight = 0;
 }
 
+/*
+ * Here is our window and renderer creation code. It is pretty much the same as
+ * we have always done it, only now it's happening inside our wrapper class. We
+ * do have to make sure to grab the window ID after creating the window as
+ * we'll need the ID for event handling.
+ *
+ * In the initialization function we open up a single window to check if window
+ * creation is functioning properly.
+ */
 short LWindow_init(LWindow *w)
 {
 	LWindow_new(w);
 
 	w->mWindow = SDL_CreateWindow(
-				"SDL Tutorial",
-				SDL_WINDOWPOS_UNDEFINED,
-				SDL_WINDOWPOS_UNDEFINED,
-				SCREEN_WIDTH,
-				SCREEN_HEIGHT,
-				SDL_WINDOW_SHOWN
-				| SDL_WINDOW_RESIZABLE);
+					"SDL Tutorial",
+					SDL_WINDOWPOS_UNDEFINED,
+					SDL_WINDOWPOS_UNDEFINED,
+					SCREEN_WIDTH,
+					SCREEN_HEIGHT,
+					SDL_WINDOW_SHOWN
+					| SDL_WINDOW_RESIZABLE);
 	if(w->mWindow == NULL) {
-		printf("Window could not be created! SDL Error: %s\n",
+		SDL_Log("%s(), SDL_CreateWindow failed. %s", __func__,
 				SDL_GetError());
 		return -1;
 	}
@@ -64,10 +88,10 @@ short LWindow_init(LWindow *w)
 	w->mHeight = SCREEN_HEIGHT;
 
 	w->mRenderer = SDL_CreateRenderer(
-				w->mWindow,
-				-1,
-				SDL_RENDERER_ACCELERATED |
-				SDL_RENDERER_PRESENTVSYNC);
+					w->mWindow,
+					-1,
+					SDL_RENDERER_ACCELERATED |
+					SDL_RENDERER_PRESENTVSYNC);
 	if(w->mRenderer == NULL) {
 		SDL_Log("%s(), SDL_CreateRenderer failed. %s",
 				__func__, SDL_GetError());
@@ -99,6 +123,17 @@ short init()
 	return 0;
 }
 
+/*
+ * All events from all windows go onto the same event queue, so to know which
+ * events belong to which window we check that the event's window ID matches
+ * ours.
+ *
+ * When you have multiple windows, Xing out the window doesn't necessarily mean
+ * we're quitting the program. What we're going to do instead is have each
+ * window hide when Xed out. So we'll need keep track of when the window is
+ * hidden/shown by checking for SDL_WINDOWEVENT_SHOWN/SDL_WINDOWEVENT_HIDDEN
+ * events.
+ */
 void LWindow_handleEvent(LWindow *w, SDL_Event *e)
 {
 	if(e->type == SDL_WINDOWEVENT && e->window.windowID == w->mWindowID)
@@ -157,7 +192,11 @@ void LWindow_handleEvent(LWindow *w, SDL_Event *e)
 			case SDL_WINDOWEVENT_RESTORED:
 			w->mMinimized = 0;
 			break;
-
+/*
+ * When you have multiple windows, Xing out the window gets interpreted as
+ * SDL_WINDOWEVENT_CLOSE window events. When we get these events we're going to
+ * hide the window using SDL_HideWindow.
+ */
 			case SDL_WINDOWEVENT_CLOSE:
 			SDL_HideWindow(w->mWindow);
 			w->mShown = 0;
@@ -177,6 +216,11 @@ void LWindow_handleEvent(LWindow *w, SDL_Event *e)
 	}
 }
 
+/*
+ * Here is our function for grabbing focus to a window. First we check if our
+ * window is even being shown and then show it with SDL_ShowWindow if it isn't
+ * being shown. Next we call SDL_RaiseWindow to focus the window.
+ */
 void LWindow_focus(LWindow *w)
 {
 	if(w->mShown == 0)
@@ -185,6 +229,9 @@ void LWindow_focus(LWindow *w)
 	SDL_RaiseWindow(w->mWindow);
 }
 
+/*
+ * Like before, we only want to render if the window is not minimized.
+ */
 void LWindow_render(LWindow *w)
 {
 	if(w->mMinimized == 0) {	
@@ -211,6 +258,9 @@ short LWindow_isShown(LWindow *w)
 	return w->mShown;
 }
 
+/*
+ * In the clean up function we close out any windows that might be open. 
+ */
 void close_all()
 {
 	int i;
@@ -220,6 +270,13 @@ void close_all()
 	SDL_Quit();
 }
 
+/*
+ * Before we enter the main loop we open up the rest of the windows we have.
+ *
+ * In the main loop after we handle the events for all the windows, we handle
+ * some special key presses. For this demo, when we press 1, 2, or 3 it will
+ * bring the corresponding window to focus.
+ */
 int main(int argc, char* argv[])
 {
 	int i;
@@ -264,7 +321,11 @@ int main(int argc, char* argv[])
 				}
 			}
 		}
-
+/*
+ * Next we render all the windows and then go through all the windows to check
+ * if any of them are shown. If all of them have been closed out we set the
+ * quit flag to true to end the program.
+ */
 		for(i = 0; i < TOTAL_WINDOWS; ++i)
 			LWindow_render(&gWindows[i]);
 			
@@ -286,3 +347,11 @@ equit:
 	return 0;
 }
 
+/*
+ * Now in this demo we did not actually render anything inside of the windows.
+ * This would involve having to manage renderers and windows and having them
+ * share resources. There is no right way to do this and the best way depends
+ * entirely on what type of application you're building. I recommend reading
+ * through the SDL documentation to understand how renderers work and then
+ * experimenting to figure out the best way for you to manage your resources.
+ */

@@ -1,5 +1,8 @@
 /*
- * This program demonstrates the use of window events.
+ * Window Events
+ *
+ * SDL also supports resizable windows. When you have resizable windows there
+ * are additional events to handle, which is what we'll be doing here.
  */
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
@@ -15,6 +18,16 @@ typedef struct {
 	int mHeight;
 } LTexture;
 
+/* 
+ * Here is our window struct we'll be using as a wrapper for the SDL_Window. It
+ * has a constructor, a initializer that creates the window, a function to
+ * create renderer from the window, an event handler, a deallocator, and some
+ * accessor functions to get various attributes from the window.
+ *
+ * In terms of data , we have the window we're wrapping, the dimensions of the
+ * window, and flags for the types of focus the windows has. We'll go into more
+ * detail further in the program.
+ */
 typedef struct {
 	SDL_Window* mWindow;
 	int mWidth;
@@ -25,13 +38,22 @@ typedef struct {
 	int mMinimized;
 } LWindow;
 
+/*
+ * We'll be using our window as a global object.
+ */
 LWindow gWindow;
 SDL_Renderer* gRenderer = NULL;
 LTexture gSceneTexture;
 
+/*
+ * Our initialization function creates the window with the SDL_WINDOW_RESIZABLE
+ * flag which allows for our window to be resizable. If the function succeeds
+ * we set the corresponding flags and dimensions. Then we return whether the
+ * window is null or not.
+ */
 void LWindow_init(LWindow *w)
 {
-	w->mWindow = NULL;
+	w-emWindow = NULL;
 	w->mMouseFocus = 1;
 	w->mKeyboardFocus = 1;
 	w->mFullScreen = 0;
@@ -141,6 +163,29 @@ short LTexture_render(LTexture *lt, int x, int y, SDL_Rect* clip)
 	return SDL_RenderCopy(gRenderer, lt->mTexture, clip, &renderQuad);
 }
 
+/*
+ * In our window's event handler we'll be looking for events of type
+ * SDL_WINDOWEVENT. SDL_WindowEvents are actually a family of events. Depending
+ * on the event we may have to update the caption of the window, so we have a
+ * flag that keeps track of that.
+ *
+ * When we have a window event we then want to check the SDL_WindowEventID to
+ * see what type of event it is. An SDL_WINDOWEVENT_SIZE_CHANGED is a resize
+ * event, so we get the new dimensions and refresh the image on the screen.
+ *
+ * An SDL_WINDOWEVENT_EXPOSED just means that window was obscured in some way
+ * and now is not obscured so we want to repaint the window.
+ *
+ * SDL_WINDOWEVENT_ENTER/SDL_WINDOWEVENT_LEAVE handles when the mouse moves
+ * into and out of the window.
+ * SDL_WINDOWEVENT_FOCUS_GAINED/SDL_WINDOWEVENT_FOCUS_LOST have to do when the
+ * window is getting input from the keyboard. Since our caption keeps track of
+ * mouse/keyboard focus, we set the update caption flag when any of these
+ * events happen.
+ *
+ * Finally here we handle when the window was minimized, maximized, or restored
+ * from being minimized.
+ */
 void LWindow_handleEvent(LWindow *w, SDL_Event *e)
 {
 	if(e->type == SDL_WINDOWEVENT)
@@ -202,6 +247,10 @@ void LWindow_handleEvent(LWindow *w, SDL_Event *e)
 			SDL_SetWindowTitle(w->mWindow, caption);
 		}
 	}
+/*
+ * For this demo we'll be toggling fullscreen with the return key. We can set
+ * fullscreen mode using SDL_SetWindowFullscreen.
+ */
 	else if(e->type == SDL_KEYDOWN && e->key.keysym.sym == SDLK_RETURN)
 	{
 		if(w->mFullScreen) {
@@ -248,6 +297,12 @@ void close_all()
 	SDL_Quit();
 }
 
+/*
+ * In the main loop we make sure to pass events to the window wrapper to handle
+ * resize events and in the rendering part of our code we make sure to only
+ * render when the window is not minimized because this can cause some bugs
+ * when we try to render to a minimized window.
+ */
 int main(int argc, char* argv[])
 {
 	if(init())
@@ -286,3 +341,4 @@ equit:
 
 	return 0;
 }
+

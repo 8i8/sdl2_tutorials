@@ -1,5 +1,20 @@
 /*
- * This program demonstrates the use of tiles in SDL.
+ * Tiling
+ *
+ * Tiling is a way of making levels out of uniformly sized reusable pieces. In
+ * this tutorial we'll be making a 1280x960 sized level of out only a 160x120
+ * sized tile set.
+ *
+ * Say if we want to make a complicated laybirinth tyoe level; We could make
+ * one huge level or we could create a tile set of 12 pieces and then create a
+ * level out of those pieces allowing us to save memory and save time by
+ * reusing pieces. This is why back in the early days of gaming tiling engines
+ * were so popular on low resource systems and are still used today in some
+ * games.
+ *
+ * In our previous tutorials we did our file reading and writing with SDL
+ * RWOps. Here we'll be using file stream which is part of the stdio.h library
+ * and is relatively easy to use with text files.
  */
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
@@ -18,6 +33,11 @@
 #define DOT_HEIGHT		20
 #define DOT_VEL			10
 
+/*
+ * Here we're defining some constants. We'll be using scrolling so we have
+ * constants for both the screen and the level. We'll also have constants to
+ * define the tiles and the tile types.
+ */
 #define TILE_RED		0
 #define TILE_GREEN		1
 #define TILE_BLUE		2
@@ -37,16 +57,38 @@ typedef struct {
 	int mHeight;
 } LTexture;
 
+/*
+ * Here is our tile struct with related functions that defines position and
+ * type, a renderer that uses a camera, and some accessors to get the tile's
+ * type and collision box. In terms of data members we have a collision box and
+ * type indicator.
+ *
+ * Normally it's a good idea to have position and collider separate when doing
+ * collision detection, but for the sake of simplicity we're using the collider
+ * to hold position. 
+ */
 typedef struct {
 	SDL_Rect mBox;
 	int mType;
 } Tile;
 
+/*
+ * Here is the dot class yet again, now with the ability to check for collision
+ * against the tiles when moving.
+ */
 typedef struct {
 	SDL_Rect mBox;
 	int mVelX, mVelY;
 } Dot;
 
+/*
+ * Our media loading function will also be initializing tiles so it need to
+ * take them in as an argument.
+ *
+ * We also the touchesWall function that checks a collision box against every
+ * wall in a tile set which will be used when we need to check the dot against
+ * the whole tile set. Finally the setTiles function loads and sets the tiles.
+ */
 short checkCollision(SDL_Rect *a, SDL_Rect *b);
 short touchesWall(SDL_Rect *box, Tile *tiles[]);
 short setTiles(Tile *tiles[]);
@@ -159,6 +201,9 @@ void LTexture_render(
 	SDL_RenderCopy(gRenderer, lt->mTexture, clip, &renderQuad);
 }
 
+/*
+ * The tile constructor initializes position, dimensions, and type.
+ */
 void Tile_init(Tile *t, int x, int y, int tileType)
 {
 	t->mBox.x = x;
@@ -170,6 +215,11 @@ void Tile_init(Tile *t, int x, int y, int tileType)
 	t->mType = tileType;
 }
 
+/*
+ * When we render we only want to show tiles that are in the camera's sight; So
+ * we check if the tile collides with the camera before rendering it. Notice
+ * also that we render the tile relative to the camera.
+ */
 void Tile_render(Tile *t, SDL_Rect *camera)
 {
 	if(checkCollision(camera, &t->mBox))
@@ -180,6 +230,9 @@ void Tile_render(Tile *t, SDL_Rect *camera)
 				&gTileClips[t->mType]);
 }
 
+/*
+ * And here are the accessors to get the tile's type and collision box.
+ */
 int Tile_getType(Tile *t)
 {
 	return t->mType;
@@ -224,6 +277,10 @@ void Dot_handleEvent(Dot *d, SDL_Event *e)
 	}
 }
 
+/*
+ * When we move the dot we check if it goes off the level or hits a wall tile.
+ * If it does we correct it.
+ */
 void Dot_move(Dot *d, Tile *tiles[])
 {
 	d->mBox.x += d->mVelX;
@@ -239,6 +296,10 @@ void Dot_move(Dot *d, Tile *tiles[])
 		d->mBox.y -= d->mVelY;
 }
 
+/*
+ * Here is the rendering code largely lifted from the scrolling/camera
+ * tutorial.
+ */
 void Dot_setCamera(Dot *d, SDL_Rect *camera)
 {
 	camera->x = (d->mBox.x + DOT_WIDTH / 2) - SCREEN_WIDTH / 2;
@@ -263,6 +324,9 @@ void Dot_render(Dot *d, SDL_Rect *camera)
 			NULL);
 }
 
+/*
+ * In our loading function we not only load the textures but also the tile set.
+ */
 short loadMedia(Tile* tiles[])
 {
 	if(LTexture_loadFromFile(&gDotTexture, "dot.bmp"))
@@ -327,6 +391,37 @@ short checkCollision(SDL_Rect *a, SDL_Rect *b)
 	return 1;
 }
 
+/*
+ * Near the top of the setTiles function we declare x/y offsets that define
+ * where we'll be place the tiles. As we load in more tiles we'll be shift the
+ * x/y position left to right and top to bottom.
+ *
+ * We then open the lazy.map file which is just a text file with the follow
+ * contents:
+ * 
+ * 00 01 02 00 01 02 00 01 02 00 01 02 00 01 02 00
+ * 01 02 00 01 02 00 01 02 00 01 02 00 01 02 00 01
+ * 02 00 11 04 04 04 04 04 04 04 04 04 04 05 01 02
+ * 00 01 10 03 03 03 03 03 03 03 03 03 03 06 02 00
+ * 01 02 10 03 08 08 08 08 08 08 08 03 03 06 00 01
+ * 02 00 10 06 00 01 02 00 01 02 00 10 03 06 01 02
+ * 00 01 10 06 01 11 05 01 02 00 01 10 03 06 02 00
+ * 01 02 10 06 02 09 07 02 00 01 02 10 03 06 00 01
+ * 02 00 10 06 00 01 02 00 01 02 00 10 03 06 01 02
+ * 00 01 10 03 04 04 04 05 02 00 01 09 08 07 02 00
+ * 01 02 09 08 08 08 08 07 00 01 02 00 01 02 00 01
+ * 02 00 01 02 00 01 02 00 01 02 00 01 02 00 01 02
+ * 
+ * Using fstream we can read text from a file much like we would read keyboard
+ * input with iostream. Before we can continue we have to check if the map
+ * loaded correctly by checking if it's NULL. If it is NULL we abort and if not
+ * we continue loading the file.
+ * 
+ * Note: depending on which compiler you use (like certain versions of Visual
+ * Studio), this piece of code may not compile. Instead of checking if map ==
+ * NULL, you have to check !map.is_open().
+ *
+ */
 short setTiles(Tile* tiles[])
 {
 	int x = 0, y = 0, i;
@@ -339,12 +434,19 @@ short setTiles(Tile* tiles[])
 		SDL_Log("%s(), fopen failed.", __func__);
 		return -1;
 	}
-
+/*
+ * If the file loaded successfully we have a for loop that reads in all the
+ * numbers from the text file. We read a number into the tileType variable and
+ * then check if the read failed. If the read failed, we abort.
+ */
 	for(i = 0; i < TOTAL_TILES; ++i)
 	{
 		int *tileType;
 		tileType = &tile;
-
+/* 
+ * We then check if the tile type number is valid. If it is valid we create a
+ * new tile of the given type, if not we print an error and stop loading tiles.
+ */
 		if(fscanf(fp, "%d", tileType) < 0) {
 			SDL_Log("%s(), fscanf failed.", __func__);
 			return -1;
@@ -356,7 +458,10 @@ short setTiles(Tile* tiles[])
 		}
 		tiles[i] = malloc(sizeof(Tile));
 		Tile_init(tiles[i], x, y, *tileType);
-		
+/*
+ * After loading a tile we move to the text tile position to the right. If we
+ * reached the end of a line of tiles, we move down to the next row. 
+ */
 		x += TILE_WIDTH;
 
 		if(x >= LEVEL_WIDTH) {
@@ -364,7 +469,10 @@ short setTiles(Tile* tiles[])
 			y += TILE_HEIGHT;
 		}
 	}
-		
+/*
+ * After all the tiles are loaded we set the clip rectangles for the tile
+ * sprites. Finally we load the map file and return.
+ */
 	gTileClips[TILE_RED].x = 0;
 	gTileClips[TILE_RED].y = 0;
 	gTileClips[TILE_RED].w = TILE_WIDTH;
@@ -430,6 +538,17 @@ short setTiles(Tile* tiles[])
 	return 0;
 }
 
+/*
+ * The touchesWall function checks a given collision box against tiles of type
+ * TILE_CENTER, TILE_TOP, TILE_TOPRIGHT, TILE_RIGHT, TILE_BOTTOMRIGHT,
+ * TILE_BOTTOM, TILE_BOTTOMLEFT, TILE_LEFT, and TILE_TOPLEFT which are all wall
+ * tiles. If you check back when we defined these constants, you'll see that
+ * these are numbered right next to each other so all we have to do is check if
+ * the type is between TILE_CENTER and TILE_TOPLEFT.
+ *
+ * If the given collision box collides with any tile that is a wall this
+ * function returns true, 
+ */
 short touchesWall(SDL_Rect *box, Tile* tiles[])
 {
 	int i;
@@ -441,6 +560,15 @@ short touchesWall(SDL_Rect *box, Tile* tiles[])
 	return 0;
 }
 
+/*
+ * In the main function right before we load the media we declare our array of
+ * tile pointers. 
+ *
+ * Our main loop is pretty much the same with some mainor adjustments; When we
+ * move the dot, we pass in the tile set, then set the camera above the dot
+ * once the dot is moved. We then render the tile set and finally render the
+ * dot over the level.
+ */
 int main(int argc, char* args[])
 {
 	int i;

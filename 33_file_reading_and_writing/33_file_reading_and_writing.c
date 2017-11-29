@@ -1,7 +1,9 @@
 /*
- * This program demonstrates file reading and writing using SDL_RWFromFile.
+ * File Reading and Writing
  *
- * https://wiki.libsdl.org/SDL_RWFromFile
+ * Being able to save and load data is needed to keep data between play
+ * sessions. SDL_RWops file handling allows us to do cross platform file IO to
+ * save data.
  */
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_ttf.h>
@@ -29,6 +31,11 @@ TTF_Font *gFont = NULL;
 LTexture gPromptTextTexture;
 LTexture gDataTextures[TOTAL_DATA];
 STdata gStr;
+/*
+ * Here we're declaring an array of Signed integers that are 32 bits long. This
+ * will be the data we will be loading and saving. For this demo this array
+ * will be of length 10.
+ */
 Sint32 gData[TOTAL_DATA];
 
 short init()
@@ -133,6 +140,12 @@ void gStr_init(STdata *gStr)
 	gStr->currentData = 0;
 }
 
+/*
+ * In our media loading function we're opening the save file for reading using
+ * SDL_RWFromFile. The first argument is the path to the file and the second
+ * argument defines how we will be opening it. "r+b" means it is being opened
+ * for reading in binary.
+ */
 short loadMedia()
 {
 	int i;
@@ -153,7 +166,12 @@ short loadMedia()
 		return -1;
 
 	SDL_RWops* file = SDL_RWFromFile("nums.bin", "r+b");
-
+/*
+ * If the file does not exist, try to create it using "w+b" the write binary
+ * mode, if that fails return -1. If a new file is made write a message to the
+ * command line. Write '0' to every position in the gData array, and then close
+ * the file handeler. If the file was opened read in the data from each line.
+ */
 	if(file == NULL)
 	{
 		if((file = SDL_RWFromFile("nums.bin", "w+b")) == NULL) {
@@ -177,7 +195,11 @@ short loadMedia()
 
 		SDL_RWclose(file);
 	}
-
+/*
+ * After the file is loaded we render the text textures that correspond with
+ * each of our data numbers. Our loadFromRenderedText function only accepts
+ * strings so we have to convert the integers to strings.
+ */
 	sprintf(string, "%d", gData[0]);
 	LTexture_loadFromRenderedText(
 				&gDataTextures[0],
@@ -195,6 +217,10 @@ short loadMedia()
 	return 0;
 }
 
+/*
+ *  When we close the program, we open up the file again for writing and write
+ *  out all the data.
+ */
 void close_all()
 {
 	int i;
@@ -225,6 +251,13 @@ void close_all()
 	SDL_Quit();
 }
 
+/*
+ * When we press up or down we want to rerender the the old current data in
+ * plain color, move to the next data point (with some bounds checking), and
+ * rerender the new current data in the highlight color. When we press left or
+ * right we decrement or increment the current data and rerender the texture
+ * associated with it. 
+ */
 void get_key(SDL_Event *e, STdata *str)
 {
 	char string[255];
@@ -284,6 +317,11 @@ void get_key(SDL_Event *e, STdata *str)
 	}
 }
 
+/*
+ * Before we go into the main loop we declare currentData to keep track of
+ * which of our data integers we're altering. We also declare a plain text
+ * color and a highlight color for rendering text.
+ */
 int main(int argc, char* args[])
 {
 	int i;

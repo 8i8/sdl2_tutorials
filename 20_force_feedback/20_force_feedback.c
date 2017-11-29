@@ -1,13 +1,16 @@
 /*
- * This program demonstrates the use of force feedback from a joystic.
+ * Force Feedback
+ *
+ * Now that we know how to how to use joysticks with SDL, we can now use the
+ * new haptics API to make the controller shake.
  */
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
 #include <stdio.h>
 #include <math.h>
 
-const int SCREEN_WIDTH = 640;
-const int SCREEN_HEIGHT = 480;
+#define SCREEN_WIDTH	640
+#define SCREEN_HEIGHT	480
 
 typedef struct {
 	SDL_Texture *mTexture;
@@ -19,9 +22,18 @@ SDL_Window* gWindow = NULL;
 SDL_Renderer* gRenderer = NULL;
 LTexture gSplashTexture;
 
+/*
+ * A haptic device is something that gives some sort of physical feedback. In
+ * this case, it makes the controller rumble. The datatype for a haptics device
+ * is intuitively named SDL_haptic.
+ */
 SDL_Joystick* gGameController = NULL;
 SDL_Haptic* gControllerHaptic = NULL;
 
+/*
+ * Like with the joysticks subsystem, you need to make sure to initialize the
+ * haptic specific subsystem in order to use haptics.
+ */
 short init()
 {
 	if(SDL_Init(SDL_INIT_VIDEO | SDL_INIT_JOYSTICK | SDL_INIT_HAPTIC)) {
@@ -39,7 +51,12 @@ short init()
 		SDL_Log("%s(), SDL_JoystickOpen failed.", __func__);
 		return -1;
 	}
-
+/*
+ * After we initialize the joystick, we need to get the haptics device from the
+ * joystick using SDL_HapticOpenFromJoystick on an opened joystick. If we
+ * manage to get the haptic device from controller we have to initialize the
+ * rumble using SDL_HapticRumbleInit.
+ */
 	gControllerHaptic = SDL_HapticOpenFromJoystick(gGameController);
 	if(gControllerHaptic == NULL) {
 		SDL_Log("%s(), SDL_HapticOpenFromJoystick failed.", __func__);
@@ -155,6 +172,9 @@ short loadMedia()
 	return 0;
 }
 
+/*
+ * Once we're done with a haptic device, we call SDL_HapticClose.
+ */
 void close_all()
 {
 	free_texture(&gSplashTexture);
@@ -173,6 +193,17 @@ void close_all()
 	SDL_Quit();
 }
 
+/*
+ * To actually make the controller rumble, you need to make it play some sort
+ * of rumbling. The easiest way to make your controller shake is by calling
+ * SDL_HapticRumblePlay, which takes in the haptic device, strength in
+ * percentage, and duration of the rumble. Here we make the controller rumble
+ * at 75% strength for half a second whenever a SDL_JoyButtonEvent happens.
+ *
+ * Now the SDL 2 haptics API has many more features not covered here including
+ * making custom effects, handling multi rumble devices, and handling haptic
+ * mice. You can check them out in the SDL 2 force feedback documentation.
+ */
 void joystic_rumble()
 {
 	if(SDL_HapticRumblePlay(gControllerHaptic, 0.75, 500))
@@ -192,8 +223,7 @@ int main(int argc, char* argv[])
 
 	while(1)
 	{
-		while(SDL_PollEvent(&e) != 0)
-		{
+		while(SDL_PollEvent(&e) != 0) {
 			if( e.type == SDL_QUIT )
 				goto equit;
 

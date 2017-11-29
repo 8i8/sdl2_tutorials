@@ -1,5 +1,14 @@
 /*
- * This program gives a more detailed look at the use of timing techniques.
+ * Advanced Timers
+ *
+ * Now that've made a basic timer with SDL, it's time to make one that can
+ * start/stop/pause.
+ *
+ * For these new features, we're going to make a timer struct. It has all the
+ * basic related function to start/stop/pause/unpause the timer and check its
+ * status. In terms of data, we have the start time like before, a variable to
+ * store the time when paused, and status flags to keep track of whether the
+ * timer is running or paused.
  */
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
@@ -149,6 +158,9 @@ int LTexture_getHeight(LTexture *lt)
 	return lt->mHeight;
 }
 
+/*
+ * Our constructor initializes the internal data members. 
+ */
 void LTimer_init(LTimer *lt)
 {
 	lt->mStartTicks = 0;
@@ -157,6 +169,12 @@ void LTimer_init(LTimer *lt)
 	lt->mStarted = 0;
 }
 
+/*
+ * The start function sets the started and paused flags, gets the timer's start
+ * time and initializes the pause time to 0. For this timer, if we want to
+ * restart it we just call start again. Since we can start the timer if it is
+ * paused and/or running, we should make sure to clear out the paused data.
+ */
 void LTimer_start(LTimer *lt)
 {
 	lt->mStarted = 1;
@@ -165,6 +183,9 @@ void LTimer_start(LTimer *lt)
 	lt->mPausedTicks = 0;
 }
 
+/*
+ * The stop function basically reinitializes all the variables.
+ */
 void LTimer_stop(LTimer *lt)
 {
 	lt->mStarted = 0;
@@ -175,6 +196,12 @@ void LTimer_stop(LTimer *lt)
 	lt->mPausedTicks = 0;
 }
 
+/*
+ * When pausing, we want to check if the timer is running because it doesn't
+ * make sense to pause a timer that hasn't started. If the timer is running, we
+ * set the pause flag, store the time when the timer was paused in
+ * mPausedTicks, and reset the start time.
+ */
 void LTimer_pause(LTimer *lt)
 {
 	if(lt->mStarted && !lt->mPaused) {
@@ -184,6 +211,17 @@ void LTimer_pause(LTimer *lt)
 	}
 }
 
+/*
+ * So when we unpause the timer, we want to make sure the timer is running and
+ * paused because we can't unpause a timer that's stopped or running. We set
+ * the paused flag to false and set the new start time.
+ *
+ * Say if you start the timer when SDL_GetTicks() reports 5000 ms and then you
+ * pause it at 10000ms. This means the relative time at the time of pausing is
+ * 5000ms. If we were to unpause it when SDL_GetTicks was at 20000, the new
+ * start time would be 20000 - 5000ms or 15000ms. This way the relative time
+ * will still be 5000ms away from the current SDL_GetTicks time.
+ */
 void LTimer_unpause(LTimer *lt)
 {
 	if(lt->mStarted && lt->mPaused) {
@@ -193,6 +231,13 @@ void LTimer_unpause(LTimer *lt)
 	}
 }
 
+/*
+ * Getting the time is a little bit tricky since our timer can be running,
+ * paused, or stopped. If the timer is stopped, we just return the initial 0
+ * value. If the timer is paused, we return the time stored when paused. If the
+ * timer is running and not paused, we return the time relative to when it
+ * started.
+ */
 Uint32 LTimer_getTicks(LTimer *lt)
 {
 	if(lt->mStarted) {
@@ -204,6 +249,9 @@ Uint32 LTimer_getTicks(LTimer *lt)
 	return 0;
 }
 
+/*
+ * Here we have some acccessor functions to check the status of the timer.
+ */
 short LTimer_isStarted(LTimer *lt)
 {
 	return lt->mStarted;
@@ -259,6 +307,11 @@ void close_all()
 	SDL_Quit();
 }
 
+/*
+ * When we press s key, we check if the timer is started. If it is, we stop it.
+ * If it isn't, we start it. When we press p, we check if the timer is paused.
+ * If it is, we unpause it. Otherwise we pause it.
+ */
 void get_key_event(SDL_Event *e, LTimer *timer)
 {
 	if(e->key.keysym.sym == SDLK_s)
@@ -277,6 +330,10 @@ void get_key_event(SDL_Event *e, LTimer *timer)
 	}
 }
 
+/*
+ * Before we enter the main loop, we declare a timer object and a string stream
+ * to turn the time value into text. 
+ */
 int main(int argc, char* argv[])
 {
 	SDL_Event e;
@@ -304,8 +361,14 @@ int main(int argc, char* argv[])
 			if(e.type == SDL_KEYDOWN)
 				get_key_event(&e, &timer);
 		}
-
-		sprintf(timeText, "%s %6.4f", text, LTimer_getTicks(&timer) / 1000.f);
+/*
+ * Before we render, we write the current time to a string. The reason we
+ * divide it by 1000 is because we want seconds and there are 1000 milliseconds
+ * per second. After that we render the text to a texture and then finally draw
+ * all the textures to the screen.
+ */
+		sprintf(timeText, "%s %6.4f", text,
+				LTimer_getTicks(&timer) / 1000.f);
 
 		if(LTexture_loadFromRenderedText(
 					&gTimeTextTexture, timeText, textColor))
@@ -341,3 +404,4 @@ equit:
 
 	return 0;
 }
+

@@ -1,6 +1,9 @@
 /*
- * This program demonstrates the use of a perticle engine to generate a small
- * cloud of particles.
+ * Particle Engines
+ *
+ * Particles are just mini-animations; What we're going to do is take these
+ * animations and spawn them around a dot to create a trail of colored
+ * shimmering particles. 
  */
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
@@ -22,12 +25,22 @@ typedef struct {
 	int mHeight;
 } LTexture;
 
+/*
+ * Here is a simple particle struct. We have related functions, a constructor
+ * to set the position, and a function to render it, a function to tell if the
+ * particle is dead. In terms of data members we have a position, a frame of
+ * animation, and a texture we'll render with.
+ */
 typedef struct {
 	int mPosX, mPosY;
 	int mFrame;
 	LTexture *mTexture;
 } Particle;
 
+/*
+ * Here is our dot with an array of particles and a function to render the
+ * particles on the dot.
+ */
 typedef struct {
 	Particle* particles[TOTAL_PARTICLES];
 	int mPosX, mPosY;
@@ -153,6 +166,13 @@ void LTexture_render(
 			&renderQuad);
 }
 
+/*
+ * For our particle constructor we initialize the position around the given
+ * position with some randomness to it. We then initialize the frame of
+ * animation with some randomness so the particles will have varying life.
+ * Finally we pick the type of texture we'll use for the particle also at
+ * random.
+ */
 void Particle_init(Particle *p, int x, int y)
 {
 	srand(SDL_GetTicks());
@@ -170,6 +190,12 @@ void Particle_init(Particle *p, int x, int y)
 	}
 }
 
+/*
+ * In the rendering function we render our texture selected in the constructor
+ * and then every other frame we render a semitransparent shimmer texture over
+ * it to make it look like the particle is shining. We then update the frame of
+ * animation.
+ */
 void Particle_render(Particle *p)
 {
 	LTexture_render(p->mTexture, p->mPosX, p->mPosY, NULL);
@@ -180,11 +206,18 @@ void Particle_render(Particle *p)
 	p->mFrame++;
 }
 
+/*
+ * Once the particle has rendered for a max of 10 frames, we mark it as dead.
+ */
 short Particle_isDead(Particle *p)
 {
 	return p->mFrame > P_LIFE;
 }
 
+/*
+ * The constructor/destructor now have to allocate/deallocate the particles we
+ * render about the dot.
+ */
 void Dot_init(Dot *d)
 {
 	int i;
@@ -242,6 +275,12 @@ void Dot_move(Dot *d)
 		d->mPosY -= d->mVelY;
 }
 
+/*
+ * Our dot's rendering function now calls our particle rendering function. The
+ * particle rendering function checks if there is any particles that are dead
+ * and replaces them. After the dead particles are replaced we render all the
+ * current particles to the screen.
+ */
 void Dot_renderParticles(Dot *d)
 {
 	int i;
@@ -260,6 +299,9 @@ void Dot_render(Dot *d)
 	Dot_renderParticles(d);
 }
 
+/*
+ * To give our particles a semi transparent look we set their alpha to 192.
+ */
 short loadMedia()
 {
 	if(LTexture_loadFromFile(&gDotTexture, "dot.bmp") < 0)
@@ -304,6 +346,15 @@ void close_all(Dot *d)
 	SDL_Quit();
 }
 
+/*
+ * Again, since our code is well encapsulated the code in the main loop hardly
+ * changes.
+ *
+ * Now like most of the tutorials this is a super simplified example. In larger
+ * program there would be particles controlled by a particle emitter that's its
+ * own class, but for the sake of simplicity we're having the Dot class
+ * function as a particle emitter.
+ */
 int main(int argc, char* argv[])
 {
 	SDL_Event e;
@@ -340,3 +391,4 @@ equit:
 
 	return 0;
 }
+

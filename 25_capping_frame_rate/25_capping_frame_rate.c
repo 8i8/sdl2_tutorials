@@ -1,13 +1,23 @@
 /*
- * This program demonstrates capping the frame rate.
+ * Capping Frame Rate
+ *
+ * Another thing we can do with SDL timers is manually cap the frame rate. Here
+ * we'll disable vsync and maintain a maximum frame rate.
  */
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
 #include <SDL2/SDL_ttf.h>
 #include <stdio.h>
 
-const int SCREEN_WIDTH = 640;
-const int SCREEN_HEIGHT = 480;
+/*
+ * For this demo, we're going render our frame normally, but at the end of the
+ * frame we're going to wait until the frame time is completed. For example
+ * here, when you want to render at 60 fps you have to spend 16 and 2/3rd
+ * milliseconds per frame ( 1000ms / 60 frames ). This is why here we calculate
+ * the number of ticks per frame in milliseconds.
+ */
+#define SCREEN_WIDTH	640
+#define SCREEN_HEIGHT	480
 #define SCREEN_FPS	60
 #define SCREEN_TICK_PER_FRAME	 1000 / SCREEN_FPS
 
@@ -47,7 +57,10 @@ short init()
 		SDL_Log("%s(), SDL_CreateWindow failed.", __func__);
 		return -1;
 	}
-
+/*
+ * As you can see, we're disabling VSync for this demo because we'll be
+ * manually capping the frame rate.
+ */
 	gRenderer = SDL_CreateRenderer(
 					gWindow,
 					-1,
@@ -192,6 +205,11 @@ void close_all()
 	SDL_Quit();
 }
 
+/*
+ * For this program we'll not only need a timer to calculate the frame rate,
+ * but also a timer to cap the frames per second. Here, before we enter the main
+ * loop, we declare some variables and start the fps calculator timer.
+ */
 int main(int argc, char* argv[])
 {
 	char *text = "Average Frames Per Second ";
@@ -216,6 +234,10 @@ int main(int argc, char* argv[])
 
 	LTimer_start(&fpsTimer);
 
+/*
+ * To cap the FPS we need to know how long the frame has taken to render which
+ * is why we start a timer at the beginning of each frame.
+ */
 	while(1)
 	{
 		LTimer_start(&capTimer);
@@ -246,7 +268,19 @@ int main(int argc, char* argv[])
 
 		SDL_RenderPresent(gRenderer);
 		++countedFrames;
-
+/*
+ * Finally here we have the code to cap the frame rate. First we get how many
+ * ticks the frame took to complete. If the number of ticks the frame took to
+ * execute is less than the ticks needed per frame, we then delay for the
+ * remaining time to prevent the application from running too fast.
+ *
+ * There's a reason we'll be using VSync for these tutorials as opposed to
+ * manually capping the frame rate. When running this application, you'll
+ * notice that it runs slightly fast. Since we're using integers (because
+ * floating point numbers are not precise), the ticks per frame will be 16ms as
+ * opposed to the exact 16 2/3ms. This solution is more of a stop gap in case
+ * you have to deal with hardware that does not support VSync.
+ */
 		frameTicks = LTimer_getTicks(&capTimer);
 		if(frameTicks < SCREEN_TICK_PER_FRAME)
 			SDL_Delay(SCREEN_TICK_PER_FRAME - frameTicks);

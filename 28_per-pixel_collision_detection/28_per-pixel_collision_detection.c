@@ -1,5 +1,9 @@
 /*
- * This program demonstrates pixel level collision detection.
+ * Per-pixel Collision Detection
+ *
+ * Once you know how to check collision between two rectangles, you can check
+ * collision between any two images since all images are made out of
+ * rectangles.
  *
  * TODO Note that this implimentation will only work when the DOT_VEL is set to
  * one, if it is set any higher ther is a space between the two dots when a
@@ -14,7 +18,7 @@
 #define SCREEN_HEIGHT	480
 #define DOT_WIDTH	20
 #define DOT_HEIGHT	20
-#define DOT_VEL		5
+#define DOT_VEL		1
 
 typedef struct {
 	SDL_Texture *mTexture;
@@ -22,6 +26,26 @@ typedef struct {
 	int mHeight;
 } LTexture;
 
+/*
+ * Everything can be made out of rectangles in a video game, even this dot.
+ * Images are made out of pixels which are squares which are rectangles. To do
+ * per-pixel collision detection all we have to do is have each object have a
+ * set of box colliders and check collision of one set of collision boxes
+ * against another.
+ *
+ * Here is our dot now with per-pixel collision detection. Its velocity is
+ * reduced to 1 pixel per frame to make the collision easier to see. The move
+ * function now takes in a vector of collision boxes so we can check two sets
+ * against each other. Since we're going to have two dots colliding, we need to
+ * be able to get the colliders so we have a function for that.
+ *
+ * Instead of having a single collision box, we have a vector of colliders. We
+ * also have a related function to shift the colliders to match the position of
+ * the dot.
+ *
+ * We also have our new collision detector that checks sets of collision boxes
+ * against each other.
+ */
 typedef struct {
 	int mPosX, mPosY;
 	int mVelX, mVelY;
@@ -132,6 +156,10 @@ short LTexture_render(LTexture *lt, int x, int y, SDL_Rect* clip)
 	return SDL_RenderCopy(gRenderer, lt->mTexture, clip, &renderQuad);
 }
 
+/*
+ * Just like before, we have to set the collider dimensions in the constructor.
+ * Only difference here is that we have multiple collision boxes to set.
+ */
 void Dot_init(Dot *d, int x, int y)
 {
 	d->mPosX = x;
@@ -190,6 +218,19 @@ void Dot_handleEvent(Dot *d, SDL_Event *e)
 	}
 }
 
+/*
+ * This functions pretty much the same as before. Whenever we move the dot, we
+ * move the collider(s) with it. After we move the dot, we check if it went off
+ * screen or hit something. If it did, we move the dot back and move its
+ * colliders with it.
+ *
+ * n't worry too much about how shiftColliders works. It's a short hand way of
+ * mColliders[ 0 ].x = ..., mColliders[ 1 ].x = ..., etc and it works for this
+ * specific case. For your own per-pixel objects you'll have your own placing
+ * functions.
+ *
+ * And after shiftColliders, have an accessor function to get the colliders.
+ */
 void Dot_move(Dot *d, SDL_Rect *otherColliders)
 {
 	d->mPosX += d->mVelX;
@@ -222,6 +263,14 @@ void Dot_render(Dot *d)
 	LTexture_render(&gDotTexture, d->mPosX, d->mPosY, NULL);
 }
 
+/*
+ * Don't worry too much about how shiftColliders works. It's a short hand way
+ * of mColliders[ 0 ].x = ..., mColliders[ 1 ].x = ..., etc and it works for
+ * this specific case. For your own per-pixel objects you'll have your own
+ * placing functions.
+ *
+ * And after shiftColliders, have an accessor function to get the colliders.
+ */
 void Dot_shiftColliders(Dot *d)
 {
 	int zone, r;
@@ -238,26 +287,15 @@ void Dot_shiftColliders(Dot *d)
 	}
 }
 
-short loadMedia()
-{
-	if(LTexture_loadFromFile(&gDotTexture, "dot.bmp"))
-		return -1;
-	return 0;
-}
-
-void close_all()
-{
-	free_texture(&gDotTexture);
-
-	SDL_DestroyRenderer(gRenderer);
-	SDL_DestroyWindow(gWindow);
-	gWindow = NULL;
-	gRenderer = NULL;
-
-	IMG_Quit();
-	SDL_Quit();
-}
-
+/*
+ * Here in our collision detection function, we have a for loop that calculates
+ * the top/bottom/left/right of each collision box in object a. 
+ *
+ * We then check calculate the top/bottom/left/right of each collision box in
+ * object b. We then check if there is no separating axis. If this no
+ * separating axis, we return true. If we get through both sets without a
+ * collision, we return false.
+ */
 short checkCollision(SDL_Rect *a, SDL_Rect *b)
 {
 	int leftA, leftB;
@@ -293,6 +331,33 @@ short checkCollision(SDL_Rect *a, SDL_Rect *b)
 	return 0;
 }
 
+short loadMedia()
+{
+	if(LTexture_loadFromFile(&gDotTexture, "dot.bmp"))
+		return -1;
+	return 0;
+}
+
+void close_all()
+{
+	free_texture(&gDotTexture);
+
+	SDL_DestroyRenderer(gRenderer);
+	SDL_DestroyWindow(gWindow);
+	gWindow = NULL;
+	gRenderer = NULL;
+
+	IMG_Quit();
+	SDL_Quit();
+}
+
+/*
+ * Before we go into the main loop we declare our dot and the other dot we'll
+ * be colliding against.
+ *
+ * Once again in the main loop we handle events for the dot, move with
+ * collision check for the dot, and then finally we render our objects.
+ */
 int main(int argc, char* argv[])
 {
 	if(init())
@@ -335,3 +400,26 @@ equit:
 	return 0;
 }
 
+/*
+ * A questions I get asked a lot is how to make a function that loads an image
+ * and auto generates the set of collision boxes for per pixel collision
+ * detection. The answer is simple:
+ * 
+ * Don't.
+ * 
+ * In most games, you don't want 100% accuracy. The more collision boxes you
+ * have the more collision checks you have and the slower it is. What most
+ * games go for is close enough, like in Street Fighter:
+ * 
+ * The results are not pixel perfect but they are close enough.
+ * 
+ * Also there's one optimization we could have done here. We could have had a
+ * bounding box for the dot that encapsulates all the other collision boxes and
+ * then checks that one first before getting to the per-pixel collison boxes.
+ * This does add one more collision detection, but since it is much more likely
+ * that two objects do not collide it will more likely save us additional
+ * collision detection. In games, this is usually done with a tree structure
+ * that has different levels of detail to allow for early outs to prevent
+ * unneeded checks at the per-pixel level. Like in previous tutorials, tree
+ * structures are outside the scope of these tutorials.
+ */

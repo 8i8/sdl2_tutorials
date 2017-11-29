@@ -1,5 +1,8 @@
 /*
- * This program demonstrates basic block colission detection.
+ * Collision Detection
+ *
+ * In games you often need to tell if two objects hit each other. For simple
+ * games, this is usually done with bounding box collision detection.
  */
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
@@ -17,6 +20,12 @@ typedef struct {
 	int mHeight;
 } LTexture;
 
+/*
+ * Here is the dot from the motion tutorial with some new features. The move
+ * function takes in a rectangle that is the collision box for the wall and the
+ * dot has a data member mCollider to represent the collision box.
+ * We're also declaring a function to check collision between two boxes.
+ */
 typedef struct {
 	int mPosX, mPosY;
 	int mVelX, mVelY;
@@ -126,6 +135,9 @@ short LTexture_render(LTexture *lt, int x, int y, SDL_Rect* clip)
 	return SDL_RenderCopy(gRenderer, lt->mTexture, clip, &renderQuad);
 }
 
+/*
+ * In the contructor we should make sure the collider's dimensions are set. 
+ */
 Dot *Dot_init(Dot *d)
 {
 	d->mPosX = 0;
@@ -161,6 +173,17 @@ void Dot_handleEvent(Dot *d, SDL_Event *e)
 	}
 }
 
+/*
+ * Here is the new moving function that now checks if we hit the wall. It works
+ * much like before only now it makes the dot move back if we go off the screen
+ * or hit the wall.
+ *
+ * First we move the dot along the x axis, but we also have to change the
+ * position of the collider. Whenever we change the dot's position, the
+ * collider's position has to follow. Then we check of the dot has gone off
+ * screen or hit the wall. If it does we move the dot back along the x axis.
+ * Finally, we do this again for motion on the y axis.
+ */
 void Dot_move(Dot *d, SDL_Rect *wall)
 {
 	d->mPosX += d->mVelX;
@@ -188,31 +211,22 @@ void Dot_move(Dot *d, SDL_Rect *wall)
 	}
 }
 
-void Dot_render(Dot *d)
-{
-	LTexture_render(&gDotTexture, d->mPosX, d->mPosY, NULL);
-}
-
-short loadMedia()
-{
-	if(LTexture_loadFromFile(&gDotTexture, "dot.bmp"))
-		return -1;
-	return 0;
-}
-
-void close_all()
-{
-	free_texture(&gDotTexture);
-
-	SDL_DestroyRenderer(gRenderer);
-	SDL_DestroyWindow(gWindow);
-	gWindow = NULL;
-	gRenderer = NULL;
-
-	IMG_Quit();
-	SDL_Quit();
-}
-
+/*
+ * Here is where the collision detection happens. This code calculates the
+ * top/bottom and left/right of each of the collison boxes.
+ *
+ * Here is where we do our separating axis test. First we check the top and
+ * bottom of the boxes to see if they are separated along the y axis. Then we
+ * check the left/right to see if they are separated on the x axis. If there is
+ * any separation, then there is no collision and we return false. If we cannot
+ * find any separation, then there is a collision and we return true.
+ *
+ * Note: SDL does have some built in collision detection functions, but for
+ * this tutorial set we'll be hand rolling our own. Mainly because it's
+ * important to know how these work and secondly because if you can roll your
+ * own you can use your collision detection with SDL rendering, OpenGL,
+ * Direct3D, Mantle, Metal, or any other rendering API.
+ */
 short checkCollision(SDL_Rect *dot, SDL_Rect *wall)
 {
 	int dot_left, wall_left;
@@ -242,6 +256,39 @@ short checkCollision(SDL_Rect *dot, SDL_Rect *wall)
 	return 1;
 }
 
+void Dot_render(Dot *d)
+{
+	LTexture_render(&gDotTexture, d->mPosX, d->mPosY, NULL);
+}
+
+short loadMedia()
+{
+	if(LTexture_loadFromFile(&gDotTexture, "dot.bmp"))
+		return -1;
+	return 0;
+}
+
+void close_all()
+{
+	free_texture(&gDotTexture);
+
+	SDL_DestroyRenderer(gRenderer);
+	SDL_DestroyWindow(gWindow);
+	gWindow = NULL;
+	gRenderer = NULL;
+
+	IMG_Quit();
+	SDL_Quit();
+}
+
+/*
+ * Before we enter the main loop, we declare the dot and define the postion and
+ * dimensions of the wall.
+ *
+ * Here is our main loop with the dot handling events, moving while checking
+ * for collision against the wall and finally rendering the wall and the dot
+ * onto the screen.
+ */
 int main(int argc, char* argv[])
 {
 	if(init())
@@ -287,3 +334,51 @@ equit:
 
 	return 0;
 }
+/*
+ * These next two sections are for future reference. Odds are if you're reading
+ * this tutorial, you're a beginner and this stuff is way too advanced. This is
+ * more for down the road when you need to use more advanced collision
+ * detection.
+ * 
+ * Now when you're starting out and just want to make something simple like
+ * tetris, this sort of collision detection is fine. For something like a
+ * physics simulator things get a much more complicated.
+ * 
+ * For something like a rigid body simulator, we have our logic do this every
+ * frame:
+ *
+ * 1) Apply all the forces to all the objects in the scene (gravity, wind,
+ * propulsion, etc).
+ * 
+ * 2) Move the objects by applying the acceleration and velocity to the
+ * position.
+ * 
+ * 3) Check collisions for all of the objects and create a set of contacts. A
+ * contact is a data structure that typically contains pointers to the two
+ * objects that are colliding, a normal vector from the first to the second
+ * object, and the amount the objects are penetrating.
+ * 
+ * 4) Take the set of generated contacts and resolve the collisions. This
+ * typically involves checking for contacts again (within a limit) and
+ * resolving them.
+ * 
+ * Now if you're barely learning collision detection, this is out of your
+ * league for now. This would take an entire tutorial set (that I currently do
+ * not have time to make) to explain it. Not only that it involves vector math
+ * and physics which is beyond the scope of these tutorials. Just keep this in
+ * mind later on when you need games that have large amounts of colliding
+ * objects and are wondering how the over all structure for a physics engine
+ * works.
+ *
+ * Another thing is that the boxes we have here are AABBs or axis aligned
+ * bounding boxes. This means they have sides that are aligned with the x and y
+ * axis. If you want to have boxes that are rotated, you can still use the
+ * separating axis test on OBBs (oriented bounding boxes). Instead of
+ * projecting the corners on the x and y axis, you project all of the corners
+ * of the boxes on the I and J axis for each of the boxes. You then check if
+ * the boxes are separated along each axis. You can extend this further for any
+ * type of polygon by projecting all of the corners of each axis along each of
+ * the polygon's axis to see if there is any separation. This all involves
+ * vector math and this as mentioned before is beyond the scope of this
+ * tutorial set. 
+ */

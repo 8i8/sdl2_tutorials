@@ -1,5 +1,16 @@
 /*
- * This program demonstrates an looped scroling background.
+ * Scrolling Backgrounds
+ *
+ * Often times in games you may want a infinite or looping background. With
+ * scrolling backgrounds, you can cycle a background that goes on forever.
+ *
+ * Say if we want to move around a dot an a infinite background. All we have to
+ * do is render two iterations of the background next to each other and move
+ * them a little every frame. When the background have moved completely over,
+ * you can reset the motion:
+ *
+ * For this tutorial we'll be using a plain version of the dot that just stays
+ * on screen.
  */
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
@@ -201,6 +212,10 @@ void close_all()
 	SDL_Quit();
 }
 
+/*
+ * Before we enter the main loop we declare a Dot object and the scrolling
+ * offset.
+ */
 int main(int argc, char* argv[])
 {
 	if(init())
@@ -222,13 +237,25 @@ int main(int argc, char* argv[])
 
 			Dot_handleEvent(&dot, &e);
 		}
-
+/*
+ * Here we're updating the dot and updating the scrolling background.
+ *
+ * Updating the position of the scrolling background is just decrementing the x
+ * position and if the x position is less than the width of the background that
+ * means the background has gone completely off screen and the position needs
+ * to be reset.
+ */
 		Dot_move(&dot);
 
 		--scrollingOffset;
 		if(scrollingOffset < -gBGTexture.mWidth)
 			scrollingOffset = 0;
-
+/*
+ * Here we're rendering the background and the dot. First we render the
+ * scrolling background by rendering two iterations of the texture next to each
+ * other and then we render the dot over it. This will give us the effect of a
+ * smooth scrolling infinite background.
+ */
 		SDL_SetRenderDrawColor(gRenderer, 0xFF, 0xFF, 0xFF, 0xFF);
 		SDL_RenderClear(gRenderer);
 
