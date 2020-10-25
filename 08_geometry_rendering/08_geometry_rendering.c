@@ -11,9 +11,6 @@
  * special graphics.
  */
 #include <SDL2/SDL.h>
-#include <SDL2/SDL_image.h>
-#include <stdio.h>
-#include <math.h>
 
 #define SCREEN_WIDTH	640
 #define SCREEN_HEIGHT	480
@@ -21,16 +18,15 @@
 SDL_Window* gWindow = NULL;
 SDL_Renderer* gRenderer = NULL;
 
-short init()
+short init(void)
 {
 	if(SDL_Init(SDL_INIT_VIDEO) < 0) {
-		SDL_Log("%s(), SDL_Init failed. SDL_Error: \"%s\"",
-				__func__, SDL_GetError());
+		SDL_Log("%s(), SDL_Init failed. %s", __func__, SDL_GetError());
 		return -1;
 	}
 
 	if(SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "1") == 0)
-		SDL_Log("Warning: Linear texture filtering not enabled!");
+		SDL_Log("Warning: Linear texture filtering not enabled.");
 
 	gWindow = SDL_CreateWindow(
 					"SDL Tutorial",
@@ -40,24 +36,17 @@ short init()
 					SCREEN_HEIGHT,
 					SDL_WINDOW_SHOWN);
 	if(gWindow == NULL) {
-		SDL_Log("%s(), SDL_CreateWindow failed.", __func__);
+		SDL_Log("%s(), SDL_CreateWindow failed. %s", __func__, SDL_GetError());
 		return -1;
 	}
 
-			
-
 	gRenderer = SDL_CreateRenderer(gWindow, -1, SDL_RENDERER_ACCELERATED);
 	if(gRenderer == NULL) {
-		SDL_Log("%s(), SDL_CreateRenderer failed.", __func__);
+		SDL_Log("%s(), SDL_CreateRenderer failed. %s", __func__, SDL_GetError());
 		return -1;
 	}
 
 	SDL_SetRenderDrawColor(gRenderer, 0xFF, 0xFF, 0xFF, 0xFF);
-
-	if((IMG_Init(IMG_INIT_PNG) & IMG_INIT_PNG) == 0) {
-		SDL_Log("%s(), IMG_Init failed.", __func__);
-		return -1;
-	}
 
 	return 0;
 }
@@ -74,7 +63,7 @@ short init()
  * we're setting the rectangle one quarter of the screen width in the x
  * direction, one quarter of the screen height in the y direction, and with
  * half the screen's width/height.
- * 
+ *
  * After defining the rectangle area, we set the rendering color with
  * SDL_SetRenderDrawColor. This function takes in the renderer for the window
  * we're using and the RGBA values for the color we want to render with. R is
@@ -83,7 +72,7 @@ short init()
  * values go from 0 to 255 (or FF hex as you see above) and are mixed together
  * to create all the colors you see on your screen. This call to
  * SDL_SetRenderDrawColor sets the drawing color to opaque red.
- * 
+ *
  * After the rectangle and color have been set, SDL_RenderFillRect is called to
  * draw the rectangle.
  */
@@ -110,10 +99,11 @@ void red_rectangle()
  * something strange about the y coordinate. Making the y coordinate larger
  * makes it go down and making the y coordinate smaller makes it go up. This is
  * because SDL and many 2D rendering APIs use a different coordinate system.
- * 
+ *
  * Back in your algebra class, you probably learned about the cartesian
- * coordinate system: Where the x axis points to the right, the y axis points up, and the origin
- * is in the bottom left corner; SDL uses a different coordinate system ...
+ * coordinate system: Where the x axis points to the right, the y axis points
+ * up, and the origin is in the bottom left corner; SDL uses a different
+ * coordinate system ...
  *
  * The x axis still points to the right, but the y axis points down and the
  * origin is in the top left. The thing to know is that SDL renders rectangles,
@@ -127,7 +117,7 @@ void outline_rectangle()
 				SCREEN_WIDTH	* 2 / 3,
 				SCREEN_HEIGHT	* 2 / 3
 	};
-	SDL_SetRenderDrawColor(gRenderer, 0x00, 0xFF, 0x00, 0xFF);		
+	SDL_SetRenderDrawColor(gRenderer, 0x00, 0xFF, 0x00, 0xFF);
 	SDL_RenderDrawRect(gRenderer, &outlineRect);
 }
 
@@ -139,7 +129,7 @@ void outline_rectangle()
  */
 void horizontal_blue_line()
 {
-	SDL_SetRenderDrawColor(gRenderer, 0x00, 0x00, 0xFF, 0xFF);		
+	SDL_SetRenderDrawColor(gRenderer, 0x00, 0x00, 0xFF, 0xFF);
 	SDL_RenderDrawLine(
 				gRenderer,
 				0,
@@ -172,23 +162,12 @@ void yellow_dotted_line()
 	}
 }
 
-void my_points(int X, int Y, int Z)
-{
-	int i, j;
-	SDL_SetRenderDrawColor(gRenderer, 0x00, 0x00, 0x00, 0xFF);
-
-	for (i = 0 ; i < Z; i++)
-		for (j = 0 ; j < Z; j++)
-			SDL_RenderDrawPoint(gRenderer, X+i, Y+j);
-}
-
 void close_all()
 {
 	SDL_DestroyRenderer(gRenderer);
 	SDL_DestroyWindow(gWindow);
 	gWindow = NULL;
 	gRenderer = NULL;
-	IMG_Quit();
 	SDL_Quit();
 }
 
@@ -199,15 +178,13 @@ void close_all()
  * initialization function. We'll cover why this happens when we get to the end
  * of the main loop.
  */
-int main(int argc, char* args[])
+int main(void)
 {
 	SDL_Event e;
 
 	if(init())
 		goto equit;
-	
-	int x, y;
-	x = 10, y = 10;
+
 	while(1)
 	{
 		while(SDL_PollEvent(&e) != 0)
@@ -221,12 +198,6 @@ int main(int argc, char* args[])
 		outline_rectangle();
 		horizontal_blue_line();
 		yellow_dotted_line();
-
-		my_points(x, y, 6);
-		if((x += 4)  >= SCREEN_WIDTH)
-			x = 0;
-		if(++y == SCREEN_HEIGHT)
-			y = 0;
 
 		SDL_RenderPresent(gRenderer);
 

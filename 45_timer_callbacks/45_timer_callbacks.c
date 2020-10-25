@@ -1,9 +1,9 @@
 /*
- * This program demonstrates timer callback wit a dellayed output to the
- * terminal after a specified delay using SDL_TimerID and SDL_AddTimer.
+ * Timer Callbacks
  *
- * https://wiki.libsdl.org/SDL_TimerID
- * https://wiki.libsdl.org/SDL_AddTimer
+ * We've covered timers with SDL before, but there are also timer callback
+ * which execute a function after a given amount of time. In this tutorial
+ * we'll make a simple program that prints to the console after a set time.
  */
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
@@ -20,11 +20,20 @@ typedef struct {
 	int mHeight;
 } LTexture;
 
+/*
+ * When creating a call back function, know that they have to be declared a
+ * certain way. You can't just create any type of function and use it as a
+ * callback.
+ */
+The call back function needs to have a 32 bit integer as its first argument, a void pointer as its second argument, and it has to return a 32 bit integer.
 Uint32 callback(Uint32 interval, void* param);
 SDL_Window* gWindow = NULL;
 SDL_Renderer* gRenderer = NULL;
 LTexture gSplashTexture;
 
+/*
+ * Do make sure to initialize with SDL_INIT_TIMER to use timer callbacks.
+ */
 short init()
 {
 	if(SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER) < 0) {
@@ -40,7 +49,7 @@ short init()
 					SCREEN_HEIGHT,
 					SDL_WINDOW_SHOWN);
 	if(gWindow == NULL) {
-		SDL_Log("%s(), SDL_CreateWindow failed.", __func__);
+		SDL_Log("%s(), SDL_CreateWindow failed. %s", __func__, SDL_GetError());
 		return -1;
 	}
 
@@ -50,7 +59,7 @@ short init()
 					SDL_RENDERER_ACCELERATED
 					| SDL_RENDERER_PRESENTVSYNC);
 	if(gRenderer == NULL) {
-		SDL_Log("%s(), SDL_CreateRenderer failed.", __func__);
+		SDL_Log("%s(), SDL_CreateRenderer failed. %s", __func__, SDL_GetError());
 		return -1;
 	}
 
@@ -84,8 +93,8 @@ short LTexture_loadFromFile(LTexture *lt, char *path)
 
 	SDL_Surface* loadedSurface = IMG_Load(path);
 	if(loadedSurface == NULL) {
-		SDL_Log("%s(), IMG_Load failed to load \"%s\".",
-				__func__, path);
+		SDL_Log("%s(), IMG_Load failed. %s", __func__, IMG_GetError());
+
 		return -1;
 	}
 
@@ -105,7 +114,7 @@ short LTexture_loadFromFile(LTexture *lt, char *path)
 					formattedSurface->w,
 					formattedSurface->h);
 	if(newTexture == NULL) {
-		SDL_Log("%s(), SDL_CreateTextureFromSurface failed.", __func__);
+		SDL_Log("%s(), SDL_CreateTextureFromSurface failed. %s", __func__, SDL_GetError());
 		return -1;
 	}
 
@@ -184,6 +193,14 @@ void close_all()
 	SDL_Quit();
 }
 
+/*
+ * Here is our simple call back function which prints a message to the console
+ * after a given amount of time. The interval argument isn't used here but is
+ * typically used for timer call backs that need to repeat themselves.
+ *
+ * Since void pointers can point to anything, this function is going to take in
+ * a string and print it to the console.
+ */
 Uint32 callback(Uint32 interval, void* param)
 {
 	SDL_Log("Callback called back with message: %s", (char*)param);
@@ -223,3 +240,4 @@ equit:
 
 	return 0;
 }
+

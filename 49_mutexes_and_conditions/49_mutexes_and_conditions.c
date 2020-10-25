@@ -1,11 +1,17 @@
 /*
- * This program demonstrates the use of mutex and contitions, using the
- * following commands:
+ * Mutexes and Conditions
  *
- * https://wiki.libsdl.org/SDL_LockMutex
- * https://wiki.libsdl.org/SDL_UnlockMutex
- * https://wiki.libsdl.org/SDL_CondSignal
- * https://wiki.libsdl.org/SDL_CondWait
+ * Not only can you lock critial sections in threads, but with mutexes and
+ * conditions it is possible for threads to tell each other when to unlock.
+ *
+ * For this demo we'll have two threads: a producer which fills a buffer and a
+ * consumer that empties a buffer. Not only can the two threads not use the
+ * same buffer at the same time, but a consumer can't read from an empty buffer
+ * and a producer can't fill a buffer that's already full.
+ *
+ * We'll use a mutex (mutually exclusive) to prevent the two threads from
+ * grabbing the same piece of data and conditions to let the threads know when
+ * they can consume and can produce.
  */
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_thread.h>
@@ -29,6 +35,10 @@ int consumer();
 void produce();
 void consume();
 
+/*
+ * Here we're globally declaring the mutex and conditions that will be used by
+ * the threads.
+ */
 SDL_Window* gWindow = NULL;
 SDL_Renderer* gRenderer = NULL;
 LTexture gSplashTexture;
@@ -53,7 +63,7 @@ short init()
 					SCREEN_HEIGHT,
 					SDL_WINDOW_SHOWN);
 	if(gWindow == NULL) {
-		SDL_Log("%s(), SDL_CreateWindow failed.", __func__);
+		SDL_Log("%s(), SDL_CreateWindow failed. %s", __func__, SDL_GetError());
 		return -1;
 	}
 
@@ -63,7 +73,7 @@ short init()
 					SDL_RENDERER_ACCELERATED
 					| SDL_RENDERER_PRESENTVSYNC);
 	if(gRenderer == NULL) {
-		SDL_Log("%s(), SDL_CreateRenderer failed.", __func__);
+		SDL_Log("%s(), SDL_CreateRenderer failed. %s", __func__, SDL_GetError());
 		return -1;
 	}
 
@@ -96,8 +106,8 @@ short LTexture_loadFromFile(LTexture *lt, char *path)
 
 	SDL_Surface* loadedSurface = IMG_Load(path);
 	if(loadedSurface == NULL) {
-		SDL_Log("%s(), IMG_Load failed to load \"%s\".",
-				__func__, path);
+		SDL_Log("%s(), IMG_Load failed. %s", __func__, IMG_GetError());
+
 		return -1;
 	}
 
@@ -118,7 +128,7 @@ short LTexture_loadFromFile(LTexture *lt, char *path)
 					formattedSurface->w,
 					formattedSurface->h);
 	if(newTexture == NULL) {
-		SDL_Log("%s(), SDL_CreateTextureFromSurface failed.", __func__);
+		SDL_Log("%s(), SDL_CreateTextureFromSurface failed. %s", __func__, SDL_GetError());
 		return -1;
 	}
 
@@ -177,6 +187,10 @@ void LTexture_render(
 	SDL_RenderCopy(gRenderer, lt->mTexture, clip, &renderQuad);
 }
 
+/*
+ * To allocate mutexes and conditons we use SDL_CreateMutex and SDL_CreateCond
+ * respectively.
+ */
 short loadMedia()
 {
 	gBufferLock = SDL_CreateMutex();
@@ -190,6 +204,10 @@ short loadMedia()
 	return 0;
 }
 
+/*
+ * And to deallocate mutexes and conditions we use SDL_DestroyMutex and
+ * SDL_DestroyCond.
+ */
 void close_all()
 {
 	LTexture_free(&gSplashTexture);
@@ -211,6 +229,10 @@ void close_all()
 	SDL_Quit();
 }
 
+/*
+ * So here are our two worker threads. The producer tries to produce 5 times
+ * and the consumer tries to consume 5 times.
+ */
 int producer()
 {
 	printf("Production started ...\n");
@@ -245,6 +267,35 @@ int consumer()
 	return 0;
 }
 
+/*
+ * Here are the functions that produce and consume. Producing a buffer means
+ * generating a random number and consuming a buffer mean reseting the
+ * generated number. The best way to show how this works is go through an
+ * example.
+ * 
+ * Let's say the producer fires first and locks the mutex with SDL_LockMutex
+ * much like it would a semaphore with a value of one; The buffer is empty so
+ * it goes through and produces; It then exits the function to unlock the
+ * critical section with SDL_UnlockMutex so the consumer can consume.
+ * 
+ * Ideally, we would want the consumer to consume, but imagine if the producer
+ * fired again, and after the producer locked the critical section the consumer
+ * tries to get it but the critical section is already locked to the producer.
+ * With just a binary semaphore, this would be a problem because the producer
+ * can't produce into a full buffer and the consumer is locked behind a mutex.
+ * However, mutexes have the ability to be used with conditions.
+ * 
+ * What the condition allows us to do is if the buffer is already full, we can
+ * wait on a condition with SDL_CondWait and unlock the mutex for other
+ * threads; Now that the consumer is unlocked it can go through and consume.
+ * 
+ * And once it's done it signals the producer with SDL_CondSignal to produce
+ * again; and then it can continue through.
+ * 
+ * With the critical section protected by a mutex and the ability of the
+ * threads to talk to each other, the worker threads will work even through we
+ * do not know in which order they will execute.
+ */
 void produce()
 {
 	SDL_LockMutex(gBufferLock);

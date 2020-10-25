@@ -15,19 +15,10 @@ SDL_Window* gWindow = NULL;
 SDL_Surface* gScreenSurface = NULL;
 SDL_Surface* gXOut = NULL;
 
-/*
- * In our code after SDL is initialized and the media is loaded (as mentioned
- * in the previous tutorial).
- *
- * We also declare an SDL_Event union. A SDL event is some thing like a key
- * press, mouse motion, joy button press, etc. In this application we're going
- * to look for quit events to end the application.
- */
 int init()
 {
 	if(SDL_Init(SDL_INIT_VIDEO) < 0) {
-		SDL_Log("error: %s(), SDL_Init failed. %s", __func__,
-				SDL_GetError());
+		SDL_Log("%s(), SDL_Init failed. %s", __func__, SDL_GetError());
 		return -1;
 	}
 
@@ -40,7 +31,7 @@ int init()
 					SDL_WINDOW_SHOWN
 					)) == NULL)
 	{
-		SDL_Log("%s(): SDL_CreateWindow failed.", __func__);
+		SDL_Log("%s(), SDL_CreateWindow failed. %s", __func__, SDL_GetError());
 		return -1;
 	}
 
@@ -52,7 +43,7 @@ int init()
 int loadMedia()
 {
 	if((gXOut = SDL_LoadBMP("x.bmp")) == NULL) {
-		SDL_Log("%s(): SDL_LoadBMP failed.", __func__);
+		SDL_Log("%s(), SDL_LoadBMP failed. %s", __func__, SDL_GetError());
 		return -1;
 	}
 
@@ -68,15 +59,6 @@ void close_all()
 	SDL_Quit();
 }
 
-/*
- * In our code after SDL is initialized and the media is loaded, as mentioned
- * in ../01_hello_SDL/01_hello_SDL.c, we create a goto event and an infinite
- * while loop that allows the while loop to be broke out of.
- *
- * We also declare an SDL_Event union. A SDL event is some thing like a key
- * press, mouse motion, joy button press, etc. In this application we're going
- * to look for quit events to end the application.
- */
 int main(int argc, char* argv[])
 {
 	SDL_Event e;
@@ -86,6 +68,41 @@ int main(int argc, char* argv[])
 
 	if(loadMedia())
 		goto equit;
+
+	while(1)
+	{
+		while(SDL_PollEvent(&e)!= 0)
+			if(e.type == SDL_QUIT)
+				goto equit;
+
+		SDL_BlitSurface(gXOut, NULL, gScreenSurface, NULL);
+		SDL_UpdateWindowSurface(gWindow);
+	}
+equit:
+	close_all();
+
+	return 0;
+}
+
+/*
+ * In our code after SDL is initialized and the media is loaded (as mentioned
+ * in the previous tutorial).
+ *
+ * We also declare an SDL_Event union. A SDL event is some thing like a key
+ * press, mouse motion, joy button press, etc. In this application we're going
+ * to look for quit events to end the application.
+ */
+
+/*
+ * In our code after SDL is initialized and the media is loaded, as mentioned
+ * in ../01_hello_SDL/01_hello_SDL.c, we create a goto event and an infinite
+ * while loop that allows the while loop to be broke out of.
+ *
+ * We also declare an SDL_Event union. A SDL event is some thing like a key
+ * press, mouse motion, joy button press, etc. In this application we're going
+ * to look for quit events to end the application.
+ */
+
 /*
  * In the previous tutorials, we had the program wait for a few seconds before
  * closing. In this application we're having the application wait until the
@@ -116,11 +133,7 @@ int main(int argc, char* argv[])
  * user Xs out the window), we set the quit flag to true so we can exit the
  * application.
  */
-	while(1)
-	{
-		while(SDL_PollEvent(&e)!= 0)
-			if(e.type == SDL_QUIT)
-				goto equit;
+
 /*
  * After we're done processing the events for our frame, we draw to the screen
  * and update it (as discussed in
@@ -129,12 +142,3 @@ int main(int argc, char* argv[])
  * the loop. If it is still false it will keep going until the user Xs out the
  * window.
  */
-		SDL_BlitSurface(gXOut, NULL, gScreenSurface, NULL);
-		SDL_UpdateWindowSurface(gWindow);
-	}
-equit:
-	close_all();
-
-	return 0;
-}
-

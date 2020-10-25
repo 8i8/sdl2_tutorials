@@ -1,5 +1,8 @@
 /*
- * This program demonstrates the animation of rendered textures.
+ * Render to Texture
+ *
+ * For some effects being able to render a scene to texture is needed. Here
+ * we'll be rendering a scene to a texture to achieve a spinning scene effect.
  */
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
@@ -8,6 +11,12 @@
 #define SCREEN_WIDTH	640
 #define SCREEN_HEIGHT	480
 
+/*
+ * Here we are adding more functionality to the texture struct. The createBlank
+ * function now takes in another argument that defines how it is accessed. We
+ * also have the setAsRenderTarget function which makes it so we can render to
+ * this texture.
+ */
 typedef struct {
 	SDL_Texture* mTexture;
 	void* mPixels;
@@ -29,7 +38,7 @@ short init()
 
 	if(SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "1") == 0)
 		SDL_Log("%s(), Warning: Linear texture filtering not enabled.",
-				__func__);
+
 
 	gWindow = SDL_CreateWindow(
 					"SDL Tutorial",
@@ -39,7 +48,7 @@ short init()
 					SCREEN_HEIGHT,
 					SDL_WINDOW_SHOWN);
 	if(gWindow == NULL) {
-		SDL_Log("%s(), SDL_CreateWindow failed.", __func__);
+		SDL_Log("%s(), SDL_CreateWindow failed. %s", __func__, SDL_GetError());
 		return -1;
 	}
 
@@ -49,7 +58,7 @@ short init()
 					SDL_RENDERER_ACCELERATED
 					| SDL_RENDERER_PRESENTVSYNC);
 	if(gRenderer == NULL) {
-		SDL_Log("%s(), SDL_CreateRenderer failed.", __func__);
+		SDL_Log("%s(), SDL_CreateRenderer failed. %s", __func__, SDL_GetError());
 		return -1;
 	}
 
@@ -83,8 +92,8 @@ short LTexture_loadFromFile(LTexture *lt, char *path)
 
 	SDL_Surface* loadedSurface = IMG_Load(path);
 	if(loadedSurface == NULL) {
-		SDL_Log("%s(), IMG_Load failed to load \"%s\".",
-				__func__, path);
+		SDL_Log("%s(), IMG_Load failed. %s", __func__, IMG_GetError());
+
 		return -1;
 	}
 
@@ -104,7 +113,7 @@ short LTexture_loadFromFile(LTexture *lt, char *path)
 					formattedSurface->w,
 					formattedSurface->h);
 	if(newTexture == NULL) {
-		SDL_Log("%s(), SDL_CreateTextureFromSurface failed.", __func__);
+		SDL_Log("%s(), SDL_CreateTextureFromSurface failed. %s", __func__, SDL_GetError());
 		return -1;
 	}
 
@@ -148,6 +157,11 @@ short LTexture_loadFromFile(LTexture *lt, char *path)
 	return 0;
 }
 
+/*
+ * When we want to render to a texture we need to set its texture access to
+ * SDL_TEXTUREACCESS_TARGET, which is why this function takes an additional
+ * argument now.
+ */
 short LTexture_createBlank(
 				LTexture *lt,
 				int width,
@@ -190,11 +204,18 @@ void LTexture_render(
 				&renderQuad, angle, center, flip);
 }
 
+/*
+ * To render to a texture we have to set it as the render target which is done
+ * here using a call to SDL_SetRenderTarget.
+ */
 void LTexture_setAsRenderTarget(LTexture *lt)
 {
 	SDL_SetRenderTarget(gRenderer, lt->mTexture);
 }
 
+/*
+ * We create our target texture in the media loading function. 
+ */
 short loadMedia()
 {
 	if(LTexture_createBlank(
@@ -220,6 +241,19 @@ void close_all()
 	SDL_Quit();
 }
 
+/*
+ * For this demo we'll render some geometry to a texture and spin that texture
+ * around the center of the screen. This is why we have variables for angle of
+ * rotation and center of screen.
+ *
+ * In our main loop before we do any rendering we set the target texture as a
+ * target. We then render our scene full of geometry and once we're done
+ * rendering to a texture we call SDL_SetRenderTarget with a NULL texture so
+ * any rendering done afterward will be done to the screen.
+ *
+ * With our scene rendered to a texture, we then render the target texture to
+ * the screen at a rotated angle.
+ */
 int main(int argc, char* args[])
 {
 	double angle = 0;

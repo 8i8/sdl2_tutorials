@@ -115,7 +115,7 @@ short init()
 	}
 
 	if(SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "1") == 0)
-		SDL_Log("Warning: Linear texture filtering not enabled!");
+		SDL_Log("Warning: Linear texture filtering not enabled.");
 
 	if(LWindow_init(&gWindows[0]))
 		return -1;

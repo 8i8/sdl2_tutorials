@@ -41,14 +41,12 @@ short init()
 		return -1;
 	}
 
-	if(SDL_NumJoysticks() < 1) {
-		SDL_Log("%s(), Warning: No input device connected.", __func__);
-		return -1;
-	}
+	if(SDL_NumJoysticks() < 1)
+		SDL_Log("Warning: No input device connected.");
 
 	gGameController = SDL_JoystickOpen(0);
 	if(gGameController == NULL) {
-		SDL_Log("%s(), SDL_JoystickOpen failed.", __func__);
+		SDL_Log("%s(), SDL_JoystickOpen failed. %s", __func__, SDL_GetError());
 		return -1;
 	}
 /*
@@ -59,12 +57,12 @@ short init()
  */
 	gControllerHaptic = SDL_HapticOpenFromJoystick(gGameController);
 	if(gControllerHaptic == NULL) {
-		SDL_Log("%s(), SDL_HapticOpenFromJoystick failed.", __func__);
+		SDL_Log("%s(), SDL_HapticOpenFromJoystick failed. %s", __func__, SDL_GetError());
 		return -1;
 	}
 
 	if(SDL_HapticRumbleInit(gControllerHaptic) < 0) {
-		SDL_Log("%s(), SDL_HapticRumbleInit failed.", __func__);
+		SDL_Log("%s(), SDL_HapticRumbleInit failed. %s", __func__, SDL_GetError());
 		return -1;
 	}
 
@@ -75,7 +73,7 @@ short init()
 					SCREEN_WIDTH, SCREEN_HEIGHT,
 					SDL_WINDOW_SHOWN);
 	if(gWindow == NULL) {
-		SDL_Log("%s(), SDL_CreateWindow failed.", __func__);
+		SDL_Log("%s(), SDL_CreateWindow failed. %s", __func__, SDL_GetError());
 		return -1;
 	}
 
@@ -85,14 +83,14 @@ short init()
 					SDL_RENDERER_ACCELERATED
 					| SDL_RENDERER_PRESENTVSYNC);
 	if(gRenderer == NULL) {
-		SDL_Log("%s(), SDL_CreateRenderer failed.", __func__);
+		SDL_Log("%s(), SDL_CreateRenderer failed. %s", __func__, SDL_GetError());
 		return -1;
 	}
 
 	SDL_SetRenderDrawColor(gRenderer, 0xFF, 0xFF, 0xFF, 0xFF);
 
 	if((IMG_Init(IMG_INIT_PNG) & IMG_INIT_PNG) == 0) {
-		SDL_Log("%s(), IMG_Init failed.", __func__);
+		SDL_Log("%s(), IMG_Init failed. %s", __func__, IMG_GetError());
 		return -1;
 	}
 
@@ -118,8 +116,8 @@ short LTexture_loadFromFile(LTexture *lt, char *path)
 
 	SDL_Surface* loadedSurface = IMG_Load(path);
 	if(loadedSurface == NULL) {
-		SDL_Log("%s(), IMG_Load failed to load \"%s\".",
-				__func__, path);
+		SDL_Log("%s(), IMG_Load failed. %s", __func__, IMG_GetError());
+
 		return -1;
 	}
 
@@ -130,7 +128,7 @@ short LTexture_loadFromFile(LTexture *lt, char *path)
 
 	newTexture = SDL_CreateTextureFromSurface(gRenderer, loadedSurface);
 	if(newTexture == NULL) {
-		SDL_Log("%s(), SDL_CreateTextureFromSurface failed.", __func__);
+		SDL_Log("%s(), SDL_CreateTextureFromSurface failed. %s", __func__, SDL_GetError());
 		return -1;
 	}
 
@@ -211,7 +209,7 @@ void joystic_rumble()
 				__func__, SDL_GetError());
 }
 
-int main(int argc, char* argv[])
+int main(void)
 {
 	SDL_Event e;
 			

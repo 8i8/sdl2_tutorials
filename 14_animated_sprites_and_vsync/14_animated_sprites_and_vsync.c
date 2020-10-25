@@ -56,7 +56,7 @@ short init()
 					SCREEN_HEIGHT,
 					SDL_WINDOW_SHOWN);
 	if(gWindow == NULL) {
-		SDL_Log("%s(), SDL_CreateWindow failed.", __func__);
+		SDL_Log("%s(), SDL_CreateWindow failed. %s", __func__, SDL_GetError());
 		return -1;
 	}
 
@@ -66,12 +66,12 @@ short init()
 					SDL_RENDERER_ACCELERATED
 					| SDL_RENDERER_PRESENTVSYNC);
 	if(gWindow == NULL) {
-		SDL_Log("%s(), SDL_CreateWindow failed.", __func__);
+		SDL_Log("%s(), SDL_CreateWindow failed. %s", __func__, SDL_GetError());
 		return -1;
 	}
 
 	if((IMG_Init(IMG_INIT_PNG) & IMG_INIT_PNG) == 0) {
-		SDL_Log("%s(), IMG_Init failed.", __func__);
+		SDL_Log("%s(), IMG_Init failed. %s", __func__, IMG_GetError());
 		return -1;
 	}
 
@@ -98,8 +98,7 @@ short loadFromFile(LTexture *lt, char *path)
 
 	SDL_Surface* loadedSurface = IMG_Load(path);
 	if(loadedSurface == NULL) {
-		SDL_Log("%s(), IMG_Load failed to load \"%s\".",
-				__func__, path);
+		SDL_Log("%s(), IMG_Load failed. %s", __func__, IMG_GetError());
 		return -1;
 	}
 
@@ -108,8 +107,7 @@ short loadFromFile(LTexture *lt, char *path)
 
 	newTexture = SDL_CreateTextureFromSurface(gRenderer, loadedSurface);
 	if(newTexture == NULL) {
-		SDL_Log("%s(), SDL_CreateTextureFromSurface failed.",
-				__func__);
+		SDL_Log("%s(), SDL_CreateTextureFromSurface failed. %s", __func__, SDL_GetError());
 		return -1;
 	}
 
@@ -153,7 +151,7 @@ short loadMedia()
 	gSpriteClips[1].y =   0;
 	gSpriteClips[1].w =  64;
 	gSpriteClips[1].h = 205;
-	
+
 	gSpriteClips[2].x = 128;
 	gSpriteClips[2].y =   0;
 	gSpriteClips[2].w =  64;
@@ -163,7 +161,7 @@ short loadMedia()
 	gSpriteClips[3].y =   0;
 	gSpriteClips[3].w =  64;
 	gSpriteClips[3].h = 205;
-	
+
 	return 0;
 }
 
@@ -183,7 +181,7 @@ void close_all()
 /*
  * Before the main loop we have to declare a variable to keep track of the
  * current frame of animation.
- * 
+ *
  * After the screen is cleared in the main loop, we want to render the current
  * frame of animation. The animation goes from frames 0 to 3. Since there are
  * only 4 frames of animation, we want to slow down the animation a bit. This
@@ -244,4 +242,3 @@ equit:
 
 	return 0;
 }
-

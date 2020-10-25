@@ -2,8 +2,8 @@
 and may not be redistributed without written permission.*/
 
 //Using SDL, SDL_image, standard IO, and, strings
-#include <SDL.h>
-#include <SDL_image.h>
+#include <SDL2/SDL.h>
+#include <SDL2/SDL_image.h>
 #include <stdio.h>
 #include <string>
 #include <string.h>
@@ -447,12 +447,12 @@ bool loadMedia()
 	bool success = true;
 
 	//Load splash textures
-	if( !gPortraitTexture.loadFromFile( "53_extensions_and_changing_orientation/portrait.png" ) )
+	if( !gPortraitTexture.loadFromFile( "portrait.png" ) )
 	{
 		SDL_Log( "Failed to load portrait texture!\n" );
 		success = false;
 	}
-	if( !gLandscapeTexture.loadFromFile( "53_extensions_and_changing_orientation/landscape.png" ) )
+	if( !gLandscapeTexture.loadFromFile( "landscape.png" ) )
 	{
 		SDL_Log( "Failed to load landscape texture!\n" );
 		success = false;

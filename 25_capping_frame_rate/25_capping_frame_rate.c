@@ -54,7 +54,7 @@ short init()
 					SCREEN_HEIGHT,
 					SDL_WINDOW_SHOWN);
 	if(gWindow == NULL) {
-		SDL_Log("%s(), SDL_CreateWindow failed.", __func__);
+		SDL_Log("%s(), SDL_CreateWindow failed. %s", __func__, SDL_GetError());
 		return -1;
 	}
 /*
@@ -66,20 +66,19 @@ short init()
 					-1,
 					SDL_RENDERER_ACCELERATED);
 	if(gRenderer == NULL) {
-		SDL_Log("%s(), SDL_CreateRenderer failed.", __func__);
+		SDL_Log("%s(), SDL_CreateRenderer failed. %s", __func__, SDL_GetError());
 		return -1;
 	}
 
 	SDL_SetRenderDrawColor(gRenderer, 0xFF, 0xFF, 0xFF, 0xFF);
 
 	if((IMG_Init(IMG_INIT_PNG) & IMG_INIT_PNG) == 0) {
-		SDL_Log("%s(), IMG_Init failed.", __func__);
+		SDL_Log("%s(), IMG_Init failed. %s", __func__, IMG_GetError());
 		return -1;
 	}
 
 	if(TTF_Init() < 0) {
-		SDL_Log("%s(), IMG_Init failed. %s",
-				__func__, TTF_GetError());
+		SDL_Log("%s(), IMG_Init failed. %s", __func__, TTF_GetError());
 		return -1;
 	}
 
@@ -108,14 +107,13 @@ short LTexture_loadFromRenderedText(
 	SDL_Surface* textSurface = TTF_RenderText_Solid(
 						gFont, textureText, textColor);
 	if(textSurface == NULL) {
-		SDL_Log("%s(), TTF_RenderText_Solid failed.", __func__);
+		SDL_Log("%s(), TTF_RenderText_Solid failed. %s", __func__, TTF_GetError());
 		return -1;
 	}
 
 	lt->mTexture = SDL_CreateTextureFromSurface(gRenderer, textSurface);
 	if(lt->mTexture == NULL) {
-		SDL_Log("%s(), SDL_CreateTextureFromSurface failed.",
-				__func__);
+		SDL_Log("%s(), SDL_CreateTextureFromSurface failed. %s", __func__, SDL_GetError());
 		return -1;
 	}
 
@@ -180,8 +178,7 @@ short loadMedia()
 {
 	gFont = TTF_OpenFont("lazy.ttf", 28);
 	if(gFont == NULL) {
-		SDL_Log("%s(), TTF_OpenFont failed. %s",
-				__func__, TTF_GetError());
+		SDL_Log("%s(), TTF_OpenFont failed. %s", __func__, TTF_GetError());
 		return -1;
 	}
 

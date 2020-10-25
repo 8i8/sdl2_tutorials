@@ -8,30 +8,28 @@ and may not be redistributed without written permission.*/
 //Using SDL, SDL OpenGL, GLEW, standard IO, and strings
 #include <SDL2/SDL.h>
 #include <GL/glew.h>
-#include <SDL2/SDL_opengl.h>
-#include <GL/glu.h>
-#include <GL/gl.h>
 #include <stdio.h>
-#include <string>
 
 //Screen dimension constants
 const int SCREEN_WIDTH = 640;
 const int SCREEN_HEIGHT = 480;
 
-bool init();		//Starts up SDL, creates window, and initializes OpenGL
-bool initGL();		//Initializes rendering program and clear color
+enum { false, true };
+
+int init();		//Starts up SDL, creates window, and initializes OpenGL
+int initGL();		//Initializes rendering program and clear color
 void update();		//Per frame update
 void render();		//Renders quad to the screen
 void close();		//Frees media and shuts down SDL
 void handleKeys(unsigned char key, int x, int y);//Input handler
 
 //Shader loading utility programs
-bool printProgramLog(GLuint program);
-bool printShaderLog(GLuint shader);
+int printProgramLog(GLuint program);
+int printShaderLog(GLuint shader);
 
 SDL_Window* gWindow = NULL;	//The window we'll be rendering to
 SDL_GLContext gContext;		//OpenGL context
-bool gRenderQuad = true;	//Render flag
+int gRenderQuad = true;	//Render flag
 
 //Graphics program
 GLuint gProgramID = 0;
@@ -39,12 +37,20 @@ GLint gVertexPos2DLocation = -1;
 GLuint gVBO = 0;
 GLuint gIBO = 0;
 
-bool initGL()
+int test()
 {
-	//Generate program
-	gProgramID = glCreateProgram();
+	GLenum z;
+	if ((z = glGetError())) {
+		printf("error is %d\n", z);
+		return 1;
+	}
+	return 0;
+}
 
-	//Create vertex shader
+int initGL()
+{
+	// Program
+	gProgramID = glCreateProgram();
 	GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
 
 	//Get vertex source
@@ -54,8 +60,6 @@ bool initGL()
 
 	//Set vertex source
 	glShaderSource(vertexShader, 1, vertexShaderSource, NULL);
-
-	//Compile vertex source
 	glCompileShader(vertexShader);
 
 	//Check vertex shader for errors
@@ -69,7 +73,6 @@ bool initGL()
 
 	//Attach vertex shader to program
 	glAttachShader(gProgramID, vertexShader);
-
 	//Create fragment shader
 	GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
 
@@ -122,8 +125,8 @@ bool initGL()
 	GLfloat vertexData[] = {
 		-0.5f, -0.5f,
 		 0.5f, -0.5f,
-		 0.5f,  0.5f,
-		-0.5f,  0.5f
+		 0.5f,	0.5f,
+		-0.5f,	0.5f
 	};
 
 	//IBO data
@@ -147,11 +150,11 @@ bool initGL()
 			4 * sizeof(GLuint),
 			indexData,
 			GL_STATIC_DRAW);
-	
+
 	return 0;
 }
 
-bool init()
+int init()
 {
 	if(SDL_Init(SDL_INIT_VIDEO) < 0) {
 		printf("SDL could not initialize! SDL Error: %s\n",
@@ -161,10 +164,9 @@ bool init()
 
 	//Use OpenGL 3.1 core
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
-	SDL_GL_SetAttribute(
-				SDL_GL_CONTEXT_PROFILE_MASK,
-				SDL_GL_CONTEXT_PROFILE_CORE);
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
+	SDL_GL_SetAttribute(SDL_GL_ACCELERATED_VISUAL, 1);
 
 	//Create window
 	gWindow = SDL_CreateWindow(
@@ -173,7 +175,7 @@ bool init()
 				SDL_WINDOWPOS_UNDEFINED,
 				SCREEN_WIDTH,
 				SCREEN_HEIGHT,
-				SDL_WINDOW_OPENGL 
+				SDL_WINDOW_OPENGL
 				| SDL_WINDOW_SHOWN);
 	if(gWindow == NULL) {
 		printf("Window could not be created! SDL Error: %s\n",
@@ -190,7 +192,7 @@ bool init()
 	}
 
 	//Initialize GLEW
-	glewExperimental = GL_TRUE; 
+	glewExperimental = GL_TRUE;
 	GLenum glewError = glewInit();
 	if(glewError != GLEW_OK) {
 		printf("Error initializing GLEW! %s\n",
@@ -227,9 +229,6 @@ void update()
 
 void render()
 {
-	//Clear color buffer
-	glClear(GL_COLOR_BUFFER_BIT);
-	
 	//Render quad
 	if(gRenderQuad)
 	{
@@ -251,8 +250,8 @@ void render()
 
 		//Set index data and render
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, gIBO);
-		//glDrawElements(GL_TRIANGLE_FAN, 4, GL_UNSIGNED_INT, NULL);
-		//glDrawElements(GL_TRIANGLE_FAN, 6, GL_UNSIGNED_INT, NULL);
+		glDrawElements(GL_TRIANGLE_FAN, 4, GL_UNSIGNED_INT, NULL);
+		glDrawElements(GL_TRIANGLE_FAN, 6, GL_UNSIGNED_INT, NULL);
 		glDrawElements(GL_TRIANGLE_STRIP, 6, GL_UNSIGNED_INT, NULL);
 
 		//Disable vertex position
@@ -268,7 +267,7 @@ void close_all()
 	//Deallocate program
 	glDeleteProgram(gProgramID);
 
-	//Destroy window	
+	//Destroy window
 	SDL_DestroyWindow(gWindow);
 	gWindow = NULL;
 
@@ -276,7 +275,7 @@ void close_all()
 	SDL_Quit();
 }
 
-bool printProgramLog(GLuint program)
+int printProgramLog(GLuint program)
 {
 	//Make sure name is shader
 	if(glIsProgram(program) != 0) {
@@ -287,49 +286,49 @@ bool printProgramLog(GLuint program)
 	//Program log length
 	int infoLogLength = 0;
 	int maxLength = infoLogLength;
-	
+
 	//Get info string length
 	glGetProgramiv(program, GL_INFO_LOG_LENGTH, &maxLength);
-	
+
 	//Allocate string
-	char* infoLog = new char[maxLength];
-	
+	char* infoLog = (char*)malloc(maxLength);
+
 	//Get info log
 	glGetProgramInfoLog(program, maxLength, &infoLogLength, infoLog);
 	if(infoLogLength > 0)
 		printf("%s\n", infoLog);
-	
+
 	//Deallocate string
-	delete[] infoLog;
+	free(infoLog);
 
 	return 0;
 }
 
-bool printShaderLog(GLuint shader)
+int printShaderLog(GLuint shader)
 {
 	//Make sure name is shader
 	if(glIsShader(shader) != 0) {
 		printf("Name %d is not a shader\n", shader);
 		return -1;
 	}
-	
+
 	//Shader log length
 	int infoLogLength = 0;
 	int maxLength = infoLogLength;
-	
+
 	//Get info string length
 	glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &maxLength);
-	
+
 	//Allocate string
-	char* infoLog = new char[maxLength];
-	
+	char* infoLog = (char*)malloc(maxLength);
+
 	//Get info log
 	glGetShaderInfoLog(shader, maxLength, &infoLogLength, infoLog);
 	if(infoLogLength > 0)
 		printf("%s\n", infoLog);
 
 	//Deallocate string
-	delete[] infoLog;
+	free(infoLog);
 
 	return -1;
 }
@@ -342,13 +341,16 @@ int main(int argc, char* args[])
 		goto equit;
 	}
 
+	printf("Test %s\n", glGetString(GL_VERSION));
+
 	//Event handler
 	SDL_Event e;
-	
+
 	//Enable text input
 	SDL_StartTextInput();
 
 	int x, y;
+	GLuint vao;
 
 	//While application is running
 	while(1)
@@ -366,12 +368,18 @@ int main(int argc, char* args[])
 		}
 
 		//Render quad
+		glClearColor(0.6, 0.7, 0.2, 1.0);
+		glClear(GL_COLOR_BUFFER_BIT);
+
+		glGenVertexArrays(1, &vao);
+		glBindVertexArray(vao);
+
 		render();
-		
+
 		//Update screen
 		SDL_GL_SwapWindow(gWindow);
 	}
-	
+
 	//Disable text input
 	SDL_StopTextInput();
 equit:
@@ -380,4 +388,3 @@ equit:
 
 	return 0;
 }
-

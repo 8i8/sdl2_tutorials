@@ -2,8 +2,8 @@
 and may not be redistributed without written permission.*/
 
 //Using SDL, SDL_image, standard IO, and, strings
-#include <SDL.h>
-#include <SDL_image.h>
+#include <SDL2/SDL.h>
+#include <SDL2/SDL_image.h>
 #include <stdio.h>
 #include <string>
 #include <string.h>
@@ -448,17 +448,17 @@ bool loadMedia()
 	bool success = true;
 
 	//Load scene textures
-	if( !gPinchCloseTexture.loadFromFile( "55_multitouch/pinch_close.png" ) )
+	if( !gPinchCloseTexture.loadFromFile( "pinch_close.png" ) )
 	{
 		SDL_Log( "Failed to load pinch close texture!\n" );
 		success = false;
 	}
-	if( !gPinchOpenTexture.loadFromFile( "55_multitouch/pinch_open.png" ) )
+	if( !gPinchOpenTexture.loadFromFile( "pinch_open.png" ) )
 	{
 		SDL_Log( "Failed to load pinch open texture!\n" );
 		success = false;
 	}
-	if( !gRotateTexture.loadFromFile( "55_multitouch/rotate.png" ) )
+	if( !gRotateTexture.loadFromFile( "rotate.png" ) )
 	{
 		SDL_Log( "Failed to load rotate texture!\n" );
 		success = false;

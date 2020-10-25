@@ -2,11 +2,13 @@
 and may not be redistributed without written permission.*/
 
 //Using SDL, SDL_image, standard IO, and, strings
-#include <SDL.h>
-#include <SDL_image.h>
+#include <SDL2/SDL.h>
+#include <SDL2/SDL_image.h>
 #include <stdio.h>
 #include <string>
 #include <string.h>
+
+//enum { false, true };
 
 //Texture wrapper class
 class LTexture
@@ -19,15 +21,15 @@ class LTexture
 		~LTexture();
 
 		//Loads image at specified path
-		bool loadFromFile( std::string path );
+		int loadFromFile( std::string path );
 
 		#ifdef _SDL_TTF_H
 		//Creates image from font string
-		bool loadFromRenderedText( std::string textureText, SDL_Color textColor );
+		int loadFromRenderedText( std::string textureText, SDL_Color textColor );
 		#endif
 
 		//Creates blank texture
-		bool createBlank( int width, int height, SDL_TextureAccess = SDL_TEXTUREACCESS_STREAMING );
+		int createBlank( int width, int height, SDL_TextureAccess = SDL_TEXTUREACCESS_STREAMING );
 
 		//Deallocates texture
 		void free();
@@ -52,8 +54,8 @@ class LTexture
 		int getHeight();
 
 		//Pixel manipulators
-		bool lockTexture();
-		bool unlockTexture();
+		int lockTexture();
+		int unlockTexture();
 		void* getPixels();
 		void copyPixels( void* pixels );
 		int getPitch();
@@ -71,10 +73,10 @@ class LTexture
 };
 
 //Starts up SDL and creates window
-bool init();
+int init();
 
 //Loads media
-bool loadMedia();
+int loadMedia();
 
 //Frees media and shuts down SDL
 void close();
@@ -109,7 +111,7 @@ LTexture::~LTexture()
 	free();
 }
 
-bool LTexture::loadFromFile( std::string path )
+int LTexture::loadFromFile( std::string path )
 {
 	//Get rid of preexisting texture
 	free();
@@ -190,7 +192,7 @@ bool LTexture::loadFromFile( std::string path )
 }
 
 #ifdef _SDL_TTF_H
-bool LTexture::loadFromRenderedText( std::string textureText, SDL_Color textColor )
+int LTexture::loadFromRenderedText( std::string textureText, SDL_Color textColor )
 {
 	//Get rid of preexisting texture
 	free();
@@ -226,7 +228,7 @@ bool LTexture::loadFromRenderedText( std::string textureText, SDL_Color textColo
 }
 #endif
 
-bool LTexture::createBlank( int width, int height, SDL_TextureAccess access )
+int LTexture::createBlank( int width, int height, SDL_TextureAccess access )
 {
 	//Create uninitialized texture
 	mTexture = SDL_CreateTexture( gRenderer, SDL_PIXELFORMAT_RGBA8888, access, width, height );
@@ -307,9 +309,9 @@ int LTexture::getHeight()
 	return mHeight;
 }
 
-bool LTexture::lockTexture()
+int LTexture::lockTexture()
 {
-	bool success = true;
+	int success = true;
 
 	//Texture is already locked
 	if( mPixels != NULL )
@@ -330,9 +332,9 @@ bool LTexture::lockTexture()
 	return success;
 }
 
-bool LTexture::unlockTexture()
+int LTexture::unlockTexture()
 {
-	bool success = true;
+	int success = true;
 
 	//Texture is not locked
 	if( mPixels == NULL )
@@ -380,10 +382,10 @@ Uint32 LTexture::getPixel32( unsigned int x, unsigned int y )
     return pixels[ ( y * ( mPitch / 4 ) ) + x ];
 }
 
-bool init()
+int init()
 {
 	//Initialization flag
-	bool success = true;
+	int success = true;
 
 	//Initialize SDL
 	if( SDL_Init( SDL_INIT_VIDEO ) < 0 )
@@ -427,7 +429,7 @@ bool init()
 			{
 				//Initialize renderer color
 				SDL_SetRenderDrawColor( gRenderer, 0xFF, 0xFF, 0xFF, 0xFF );
-				
+
 				//Initialize PNG loading
 				int imgFlags = IMG_INIT_PNG;
 				if( !( IMG_Init( imgFlags ) & imgFlags ) )
@@ -442,23 +444,23 @@ bool init()
 	return success;
 }
 
-bool loadMedia()
+int loadMedia()
 {
 	//Loading success flag
-	bool success = true;
+	int success = true;
 
 	//Load scene textures
-	if( !gTouchDownTexture.loadFromFile( "54_touches/touch_down.png" ) )
+	if( !gTouchDownTexture.loadFromFile( "touch_down.png" ) )
 	{
 		SDL_Log( "Failed to load touch down texture!\n" );
 		success = false;
 	}
-	if( !gTouchMotionTexture.loadFromFile( "54_touches/touch_motion.png" ) )
+	if( !gTouchMotionTexture.loadFromFile( "touch_motion.png" ) )
 	{
 		SDL_Log( "Failed to load touch motion texture!\n" );
 		success = false;
 	}
-	if( !gTouchUpTexture.loadFromFile( "54_touches/touch_up.png" ) )
+	if( !gTouchUpTexture.loadFromFile( "touch_up.png" ) )
 	{
 		SDL_Log( "Failed to load touch up texture!\n" );
 		success = false;
@@ -503,7 +505,7 @@ int main( int argc, char* args[] )
 		else
 		{
 			//Main loop flag
-			bool quit = false;
+			int quit = false;
 
 			//Event handler
 			SDL_Event e;
@@ -511,7 +513,7 @@ int main( int argc, char* args[] )
 			//Touch variables
 			SDL_Point touchLocation = { gScreenRect.w / 2, gScreenRect.h / 2 };
 			LTexture* currentTexture = &gTouchUpTexture;
-			
+
 			//While application is running
 			while( !quit )
 			{
@@ -532,7 +534,7 @@ int main( int argc, char* args[] )
 							//Get screen dimensions
 							gScreenRect.w = e.window.data1;
 							gScreenRect.h = e.window.data2;
-							
+
 							//Update screen
 							SDL_RenderPresent( gRenderer );
 						}

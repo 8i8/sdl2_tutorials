@@ -3,7 +3,7 @@
  *
  * Particles are just mini-animations; What we're going to do is take these
  * animations and spawn them around a dot to create a trail of colored
- * shimmering particles. 
+ * shimmering particles.
  */
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
@@ -63,7 +63,7 @@ short init()
 	}
 
 	if(SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "1") == 0)
-		SDL_Log("Warning: Linear texture filtering not enabled!");
+		SDL_Log("Warning: Linear texture filtering not enabled.");
 
 	gWindow = SDL_CreateWindow(
 					"SDL Tutorial",
@@ -73,7 +73,7 @@ short init()
 					SCREEN_HEIGHT,
 					SDL_WINDOW_SHOWN);
 	if(gWindow == NULL) {
-		SDL_Log("%s(), SDL_CreateWindow failed.", __func__);
+		SDL_Log("%s(), SDL_CreateWindow failed. %s", __func__, SDL_GetError());
 		return -1;
 	}
 
@@ -83,7 +83,7 @@ short init()
 					SDL_RENDERER_ACCELERATED
 					| SDL_RENDERER_PRESENTVSYNC);
 	if(gRenderer == NULL) {
-		SDL_Log("%s(), SDL_CreateRenderer failed.", __func__);
+		SDL_Log("%s(), SDL_CreateRenderer failed. %s", __func__, SDL_GetError());
 		return -1;
 	}
 
@@ -115,8 +115,8 @@ short LTexture_loadFromFile(LTexture *lt, char *path)
 
 	SDL_Surface* loadedSurface = IMG_Load(path);
 	if(loadedSurface == NULL) {
-		SDL_Log("%s(), IMG_Load failed to load \"%s\".",
-				__func__, path);
+		SDL_Log("%s(), IMG_Load failed. %s", __func__, IMG_GetError());
+
 		return -1;
 	}
 
@@ -127,7 +127,7 @@ short LTexture_loadFromFile(LTexture *lt, char *path)
 
 	newTexture = SDL_CreateTextureFromSurface(gRenderer, loadedSurface);
 	if(newTexture == NULL) {
-		SDL_Log("%s(), SDL_CreateTextureFromSurface failed.", __func__);
+		SDL_Log("%s(), SDL_CreateTextureFromSurface failed. %s", __func__, SDL_GetError());
 		return -1;
 	}
 
@@ -245,7 +245,7 @@ void Dot_handleEvent(Dot *d, SDL_Event *e)
 	if(e->type == SDL_KEYDOWN && e->key.repeat == 0)
 	{
 		switch(e->key.keysym.sym) {
-			case SDLK_UP: 	d->mVelY -= DOT_VEL; break;
+			case SDLK_UP:	d->mVelY -= DOT_VEL; break;
 			case SDLK_DOWN: d->mVelY += DOT_VEL; break;
 			case SDLK_LEFT: d->mVelX -= DOT_VEL; break;
 			case SDLK_RIGHT:d->mVelX += DOT_VEL; break;
@@ -254,7 +254,7 @@ void Dot_handleEvent(Dot *d, SDL_Event *e)
 	else if(e->type == SDL_KEYUP && e->key.repeat == 0)
 	{
 		switch(e->key.keysym.sym) {
-			case SDLK_UP: 	d->mVelY += DOT_VEL; break;
+			case SDLK_UP:	d->mVelY += DOT_VEL; break;
 			case SDLK_DOWN: d->mVelY -= DOT_VEL; break;
 			case SDLK_LEFT: d->mVelX += DOT_VEL; break;
 			case SDLK_RIGHT:d->mVelX -= DOT_VEL; break;
@@ -318,7 +318,7 @@ short loadMedia()
 
 	if(LTexture_loadFromFile(&gShimmerTexture, "shimmer.bmp") < 0)
 		return -1;
-	
+
 	LTexture_setAlpha(&gRedTexture, 192);
 	LTexture_setAlpha(&gGreenTexture, 192);
 	LTexture_setAlpha(&gBlueTexture, 192);
@@ -355,7 +355,7 @@ void close_all(Dot *d)
  * own class, but for the sake of simplicity we're having the Dot class
  * function as a particle emitter.
  */
-int main(int argc, char* argv[])
+int main(void)
 {
 	SDL_Event e;
 	Dot dot;
@@ -391,4 +391,3 @@ equit:
 
 	return 0;
 }
-

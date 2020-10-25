@@ -48,8 +48,8 @@ short init()
 	}
 
 	if(SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "1") == 0)
-		SDL_Log("%s() Linear texture filtering not enabled.",
-				__func__);
+		SDL_Log("Warning: Linear texture filtering not enabled.");
+
 
 	gWindow = SDL_CreateWindow(
 					"SDL Tutorial",
@@ -59,21 +59,21 @@ short init()
 					SCREEN_HEIGHT,
 					SDL_WINDOW_SHOWN);
 	if(gWindow == NULL) {
-		SDL_Log("%s(): SDL_CreateWindow failed.", __func__);
+		SDL_Log("%s(), SDL_CreateWindow failed. %s", __func__, SDL_GetError());
 		return -1;
 	}
 
 	gRenderer = SDL_CreateRenderer(gWindow, -1, SDL_RENDERER_ACCELERATED);
 
 	if(gRenderer == NULL) {
-		SDL_Log("%s(): SDL_CreateRenderer failed.", __func__);
+		SDL_Log("%s(), SDL_CreateRenderer failed. %s", __func__, SDL_GetError());
 		return -1;
 	}
 
 	SDL_SetRenderDrawColor(gRenderer, 0xFF, 0xFF, 0xFF, 0xFF);
 
 	if((IMG_Init(IMG_INIT_PNG) & IMG_INIT_PNG) == 0) {
-		SDL_Log("%s(): IMG_Init failed.", __func__);
+		SDL_Log("%s(), IMG_Init failed. %s", __func__, IMG_GetError());
 		return -1;
 	}
 
@@ -94,18 +94,16 @@ SDL_Texture* loadTexture(char *path)
 	SDL_Texture* newTexture = NULL;
 	SDL_Surface* loadedSurface;
 	
-	if((loadedSurface = IMG_Load((char*)path)) == NULL) {
-		SDL_Log("%s(): IMG_Load failed.", __func__);
+	if((loadedSurface = IMG_Load(path)) == NULL) {
+		SDL_Log("%s(), IMG_Load failed. %s", __func__, IMG_GetError());
 		return NULL;
 	}
 
 	if((newTexture = SDL_CreateTextureFromSurface(
 					gRenderer, loadedSurface)) == NULL) {
-		SDL_Log("%s(): SDL_CreateTextureFromSurface failed.",
-				__func__);
+		SDL_Log("%s(), SDL_CreateTextureFromSurface failed. %s", __func__, SDL_GetError());
 		return NULL;
 	}
-	
 
 	SDL_FreeSurface(loadedSurface);
 

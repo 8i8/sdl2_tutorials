@@ -1,9 +1,9 @@
 /*
- * This program demonstrates atomic operations to inhibit multi threaded
- * applications, using SDL_AtomicLock and SDL_AtomicUnlock
+ * Atomic Operations
  *
- * https://wiki.libsdl.org/SDL_AtomicLock
- * https://wiki.libsdl.org/SDL_AtomicUnlock
+ * Semaphores operate at an operating system level. Atomic operations are a way
+ * to lock data at a efficient CPU level. Here we'll be locking a critical
+ * section using GPU spinlocks.
  */
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_thread.h>
@@ -21,6 +21,9 @@ typedef struct {
 	int mHeight;
 } LTexture;
 
+/*
+ * Instead of a semaphore we'll be using a spinlock to protect our data buffer.
+ */
 SDL_Window* gWindow = NULL;
 SDL_Renderer* gRenderer = NULL;
 LTexture gSplashTexture;
@@ -43,7 +46,7 @@ short init()
 					SCREEN_HEIGHT,
 					SDL_WINDOW_SHOWN);
 	if(gWindow == NULL) {
-		SDL_Log("%s(), SDL_CreateWindow failed.", __func__);
+		SDL_Log("%s(), SDL_CreateWindow failed. %s", __func__, SDL_GetError());
 		return -1;
 	}
 
@@ -53,7 +56,7 @@ short init()
 					SDL_RENDERER_ACCELERATED
 					| SDL_RENDERER_PRESENTVSYNC);
 	if(gRenderer == NULL) {
-		SDL_Log("%s(), SDL_CreateRenderer failed.", __func__);
+		SDL_Log("%s(), SDL_CreateRenderer failed. %s", __func__, SDL_GetError());
 		return -1;
 	}
 
@@ -87,8 +90,8 @@ short LTexture_loadFromFile(LTexture *lt, char *path)
 
 	SDL_Surface* loadedSurface = IMG_Load(path);
 	if(loadedSurface == NULL) {
-		SDL_Log("%s(), IMG_Load failed to load \"%s\".",
-				__func__, path);
+		SDL_Log("%s(), IMG_Load failed. %s", __func__, IMG_GetError());
+
 		return -1;
 	}
 
@@ -109,7 +112,7 @@ short LTexture_loadFromFile(LTexture *lt, char *path)
 					formattedSurface->w,
 					formattedSurface->h);
 	if(newTexture == NULL) {
-		SDL_Log("%s(), SDL_CreateTextureFromSurface failed.", __func__);
+		SDL_Log("%s(), SDL_CreateTextureFromSurface failed. %s", __func__, SDL_GetError());
 		return -1;
 	}
 
@@ -175,6 +178,9 @@ short loadMedia()
 	return 0;
 }
 
+/*
+ * Unlike semaphores, spin locks do not need to be allocated and deallocated.
+ */
 void close_all()
 {
 	LTexture_free(&gSplashTexture);
@@ -188,6 +194,13 @@ void close_all()
 	SDL_Quit();
 }
 
+/*
+ * Here our critical section is protected by SDL_AtomicLock and SDL_AtomicUnlock.
+ *
+ * In this case it may seem like semaphores and atomic locks are the same, but
+ * remember that semaphores can allow access beyond a single thread. Atomic
+ * operations are for when you want a strict locked/unlocked state.
+ */
 int worker(void* data)
 {
 	char *str;
@@ -250,3 +263,4 @@ equit:
 
 	return 0;
 }
+

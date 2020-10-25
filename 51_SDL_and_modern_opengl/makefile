@@ -1,6 +1,6 @@
-OBJS = 51_SDL_and_modern_opengl.cpp
+OBJS = 51_SDL_and_modern_opengl.c
 
-CC = g++
+CC = gcc
 
 # -fsanitize=address -fno-omit-frame-pointer
 COMPILER_FLAGS = -g -Wall -Wextra -pedantic

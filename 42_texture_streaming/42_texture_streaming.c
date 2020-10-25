@@ -55,7 +55,7 @@ short init()
 	}
 
 	if(SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "1") == 0)
-		SDL_Log("Warning: Linear texture filtering not enabled!");
+		SDL_Log("Warning: Linear texture filtering not enabled.");
 
 	gWindow = SDL_CreateWindow(
 					"SDL Tutorial",
@@ -65,7 +65,7 @@ short init()
 					SCREEN_HEIGHT,
 					SDL_WINDOW_SHOWN);
 	if(gWindow == NULL) {
-		SDL_Log("%s(), SDL_CreateWindow failed.", __func__);
+		SDL_Log("%s(), SDL_CreateWindow failed. %s", __func__, SDL_GetError());
 		return -1;
 	}
 
@@ -75,7 +75,7 @@ short init()
 					SDL_RENDERER_ACCELERATED
 					| SDL_RENDERER_PRESENTVSYNC);
 	if(gRenderer == NULL) {
-		SDL_Log("%s(), SDL_CreateRenderer failed.", __func__);
+		SDL_Log("%s(), SDL_CreateRenderer failed. %s", __func__, SDL_GetError());
 		return -1;
 	}
 
@@ -214,7 +214,7 @@ short DataStream_loadMedia(DataStream *ds)
 	for(i = 0; i < IMG_NUM; i++) {
 		sprintf(path, "foo_walk_%d.png", i);
 		if((loadedSurface = IMG_Load(path)) == NULL) {
-			SDL_Log("%s(), IMG_Load failed.", __func__);
+			SDL_Log("%s(), IMG_Load failed. %s", __func__, IMG_GetError());
 			return -1;
 		}
 		ds->mImages[i] = SDL_ConvertSurfaceFormat(

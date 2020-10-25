@@ -64,12 +64,12 @@ short init()
 					SCREEN_HEIGHT,
 					SDL_WINDOW_SHOWN);
 	if(gWindow == NULL) {
-		SDL_Log("%s(), SDL_CreateWindow failed.", __func__);
+		SDL_Log("%s(), SDL_CreateWindow failed. %s", __func__, SDL_GetError());
 		return -1;
 	}
 
 	if((IMG_Init(IMG_INIT_PNG)& IMG_INIT_PNG) == 0) {
-		SDL_Log("%s(), IMG_Init failed.", __func__);
+		SDL_Log("%s(), IMG_Init failed. %s", __func__, IMG_GetError());
 		return -1;
 	}
 
@@ -109,8 +109,8 @@ SDL_Surface* loadSurface(char *path)
 	SDL_Surface* optimizedSurface = NULL;
 	SDL_Surface* loadedSurface = NULL;
 
-	if((loadedSurface = IMG_Load((char*)path)) == NULL) {
-		SDL_Log("%s() IMG_Load failed.", __func__);
+	if((loadedSurface = IMG_Load(path)) == NULL) {
+		SDL_Log("%s(), IMG_Load failed. %s", __func__, IMG_GetError());
 		return NULL;
 	}
 
@@ -119,7 +119,7 @@ SDL_Surface* loadSurface(char *path)
 						gScreenSurface->format,
 						SDL_SWSURFACE);
 	if(optimizedSurface == NULL) {
-		SDL_Log("%s() SDL_ConvertSurface failed.", __func__);
+		SDL_Log("%s(), SDL_ConvertSurface failed %s.", __func__, SDL_GetError());
 		return NULL;
 	}
 

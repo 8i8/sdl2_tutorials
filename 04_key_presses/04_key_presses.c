@@ -75,7 +75,7 @@ short init()
 					SCREEN_HEIGHT,
 					SDL_WINDOW_SHOWN);
 	if(gWindow == NULL) {
-		SDL_Log("%s(), SDL_CreateWindow failed.", __func__);
+		SDL_Log("%s(), SDL_CreateWindow failed. %s", __func__, SDL_GetError());
 		return -1;
 	}
 
@@ -100,31 +100,31 @@ short loadMedia()
 {
 	gKeyPressSurfaces[KEY_PRESS_SURFACE_DEFAULT] = SDL_LoadBMP("press.bmp");
 	if(gKeyPressSurfaces[KEY_PRESS_SURFACE_DEFAULT] == NULL) {
-		SDL_Log("%s(): Failed to load default image.", __func__);
+		SDL_Log("%s(), SDL_LoadBMP faild. %s", __func__, SDL_GetError());
 		return -1;
 	}
 
 	gKeyPressSurfaces[KEY_PRESS_SURFACE_UP] = SDL_LoadBMP("up.bmp");
 	if(gKeyPressSurfaces[KEY_PRESS_SURFACE_UP] == NULL) {
-		SDL_Log("%s(): Failed to load up image.", __func__);
+		SDL_Log("%s(), SDL_LoadBMP faild. %s", __func__, SDL_GetError());
 		return -1;
 	}
 
 	gKeyPressSurfaces[KEY_PRESS_SURFACE_DOWN] = SDL_LoadBMP("down.bmp");
 	if(gKeyPressSurfaces[KEY_PRESS_SURFACE_DOWN] == NULL) {
-		SDL_Log("%s(): Failed to load down image.", __func__);
+		SDL_Log("%s(), SDL_LoadBMP faild. %s", __func__, SDL_GetError());
 		return -1;
 	}
 
 	gKeyPressSurfaces[KEY_PRESS_SURFACE_LEFT] = SDL_LoadBMP("left.bmp");
 	if(gKeyPressSurfaces[KEY_PRESS_SURFACE_LEFT] == NULL) {
-		SDL_Log("%s(): Failed to load left image.", __func__);
+		SDL_Log("%s(), SDL_LoadBMP faild. %s", __func__, SDL_GetError());
 		return -1;
 	}
 
 	gKeyPressSurfaces[KEY_PRESS_SURFACE_RIGHT] = SDL_LoadBMP("right.bmp");
 	if(gKeyPressSurfaces[KEY_PRESS_SURFACE_RIGHT] == NULL) {
-		SDL_Log("%s(): Failed to load right image.", __func__);
+		SDL_Log("%s(), SDL_LoadBMP faild. %s", __func__, SDL_GetError());
 		return -1;
 	}
 

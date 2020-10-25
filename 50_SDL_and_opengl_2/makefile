@@ -2,9 +2,9 @@ OBJS = 50_SDL_and_opengl_2.c
 
 CC = gcc
 
-COMPILER_FLAGS = -g -Wall -Wextra -pedantic -fsanitize=address -fno-omit-frame-pointer -lGL -lGLU 
+COMPILER_FLAGS = -g -Wall -Wextra -pedantic -fsanitize=address -fno-omit-frame-pointer
 
-LINKER_FLAGS = -lSDL2 -lSDL2_image -lSDL2_ttf
+LINKER_FLAGS = -lSDL2 -lSDL2_image -lSDL2_ttf -lGL -lGLU
 
 OBJ_NAME = p50_SDL_and_opengl_2
 

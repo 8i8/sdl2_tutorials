@@ -40,7 +40,7 @@ int init()
 					SCREEN_WIDTH, SCREEN_HEIGHT,
 					SDL_WINDOW_SHOWN);
 	if(gWindow == NULL) {
-		SDL_Log("%s(), SDL_CreateWindow failed.", __func__);
+		SDL_Log("%s(), SDL_CreateWindow failed. %s", __func__, SDL_GetError());
 		return -1;
 	}
 
@@ -67,34 +67,34 @@ SDL_Surface* loadSurface(char *path)
 {
 	SDL_Surface* optimizedSurface = NULL;
 
-	SDL_Surface* loadedSurface = SDL_LoadBMP((char*)path);
+	SDL_Surface* loadedSurface = SDL_LoadBMP(path);
 	if(loadedSurface == NULL) {
-		SDL_Log("%s(), SDL_LoadBMP failed.", __func__);
+		SDL_Log("%s(), SDL_LoadBMP failed. %s", __func__, SDL_GetError());
 		return NULL;
 	}
 
 /*
  * If the image loaded successfully in the previous lines of code, we optimize
  * the surface we loaded.
- * 
+ *
  * See when you load a bitmap, it's typically loaded in a 24bit format since
  * most bitmaps are 24bit. Most, if not all, modern displays are not 24bit by
  * default. If we blit an image that's 24bit onto a 32bit image, SDL will
  * convert it every single time the image is blitted.
- * 
+ *
  * So what we're going to do when an image is loaded is convert it to the same
  * format as the screen so no conversion needs to be done on blit. This can be
  * done easily with SDL_ConvertSurface. All we have to do is pass in the
  * surface want to convert with the format of the screen.
- * 
+ *
  * It's important to note that SDL_ConvertSurface returns a copy of the
  * original in a new format. The original loaded image is still in memory after
  * this call. This means we have to free the original loaded surface or we'll
  * have two copies of the same image in memory.
- * 
+ *
  * After the image is loaded and converted, we return the final optimized
  * image.
- * 
+ *
  * By the way, I keep getting e-mails saying that the last argument
  * SDL_ConvertSurface should be 0. NULL is 0. If your compiler barks a warning
  * at you, you can change that last argument to 0.
@@ -104,7 +104,7 @@ SDL_Surface* loadSurface(char *path)
 						gScreenSurface->format,
 						SDL_SWSURFACE);
 	if(optimizedSurface == NULL) {
-		SDL_Log("%s(), SDL_ConvertSurface failed.", __func__);
+		SDL_Log("%s(), SDL_ConvertSurface failed. %s", __func__, SDL_GetError());
 		return NULL;
 	}
 
@@ -143,7 +143,7 @@ int main(int argc, char* args[])
  * source surface to blit onto the destination surface. It also takes in a
  * destination SDL_Rect which defines the position and size of the image you
  * are blitting.
- * 
+ *
  * So if we want to take an image that's smaller than the screen and make it
  * the size of the screen, you make the destination width/height to be the
  * width/height of the screen.
@@ -158,7 +158,7 @@ int main(int argc, char* args[])
 				NULL,
 				gScreenSurface,
 				&stretchRect);
-	
+
 		SDL_UpdateWindowSurface(gWindow);
 	}
 equit:

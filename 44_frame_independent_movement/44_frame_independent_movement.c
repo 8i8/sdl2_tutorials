@@ -1,12 +1,13 @@
 /*
- * This program demonstrates the movement of the dot, indipendant of the frame
- * rate.
+ * Frame Independent Movement
+ *
+ * Whether you want to be able to handle unstable frame rates or support
+ * multiple frame rates, you can set your movement based on time to make it
+ * independent of frame rate.
  */
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
 #include <stdio.h>
-
-enum truth { false, true };
 
 #define SCREEN_WIDTH	640
 #define SCREEN_HEIGHT	480
@@ -29,6 +30,22 @@ typedef struct {
 	short mStarted;
 } LTimer;
 
+/*
+ * The dot struct returns adapted for frame independent movement. Notice how the
+ * velocity is now 640. The way we did per frame velocity previously would
+ * cause this to fly across the screen in a single frame. For this demo we're
+ * going to base things on time and the standard unit of time is 1 second. 640
+ * pixels per second translates into little more than 10 pixels per frame in a
+ * 60 frames per second application.
+ *
+ * In order to move based on frame time, the move function needs to know how
+ * much time is moving per frame. This is why the move function takes in a time
+ * step which is how much time has passed since the last update.
+ *
+ * Also notice how the position and velocity are floats instead of integers. If
+ * we used integers the motion would be always truncated to the nearest integer
+ * which would cause greater inaccuracies.
+ */
 typedef struct {
 	float mPosX, mPosY;
 	float mVelX, mVelY;
@@ -56,7 +73,7 @@ short init()
 
 	if(SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "1") == 0)
 		SDL_Log("%s(), Warning: Linear texture filtering not enabled.",
-				__func__);
+
 
 	gWindow = SDL_CreateWindow(
 					"SDL Tutorial",
@@ -66,13 +83,13 @@ short init()
 					SCREEN_HEIGHT,
 					SDL_WINDOW_SHOWN);
 	if(gWindow == NULL) {
-		SDL_Log("%s(), SDL_CreateWindow failed.", __func__);
+		SDL_Log("%s(), SDL_CreateWindow failed. %s", __func__, SDL_GetError());
 		return -1;
 	}
 
 	gRenderer = SDL_CreateRenderer(gWindow, -1, SDL_RENDERER_ACCELERATED);
 	if(gRenderer == NULL) {
-		SDL_Log("%s(), SDL_CreateRenderer failed.", __func__);
+		SDL_Log("%s(), SDL_CreateRenderer failed. %s", __func__, SDL_GetError());
 		return -1;
 	}
 
@@ -100,6 +117,9 @@ void LTexture_free(LTexture *lt)
 	}
 }
 
+/*
+ * vsync is not enabled for this tutorial.
+ */
 short LTexture_loadFromFile(LTexture *lt, char *path)
 {
 	LTexture_free(lt);
@@ -108,8 +128,8 @@ short LTexture_loadFromFile(LTexture *lt, char *path)
 
 	SDL_Surface* loadedSurface = IMG_Load(path);
 	if(loadedSurface == NULL) {
-		SDL_Log("%s(), IMG_Load failed to load \"%s\".",
-				__func__, path);
+		SDL_Log("%s(), IMG_Load failed. %s", __func__, IMG_GetError());
+
 		return -1;
 	}
 
@@ -129,7 +149,7 @@ short LTexture_loadFromFile(LTexture *lt, char *path)
 					formattedSurface->w,
 					formattedSurface->h);
 	if(newTexture == NULL) {
-		SDL_Log("%s(), SDL_CreateTextureFromSurface failed.", __func__);
+		SDL_Log("%s(), SDL_CreateTextureFromSurface failed. %s", __func__, SDL_GetError());
 		return -1;
 	}
 
@@ -194,8 +214,8 @@ void LTexture_render(
 
 void LTimer_start(LTimer *t)
 {
-	t->mStarted = true;
-	t->mPaused = false;
+	t->mStarted = 1;
+	t->mPaused = 0;
 	t->mStartTicks = SDL_GetTicks();
 	t->mPausedTicks = 0;
 }
@@ -214,6 +234,21 @@ Uint32 LTimer_getTicks(LTimer *t)
 	return time;
 }
 
+/*
+ * When we move around the dot we first get the time from the step time so we
+ * know how much time has passed since the last time we moved. We turn it from
+ * milliseconds into seconds and pass it to the move function. After we're done
+ * moving we restart the step timer so we'll now how much time has passed for
+ * when we need to move again. Finally we render as we normally do.
+ *
+ * For most of these tutorials, things are simplified to make things easier to
+ * digest. For most if not all applications we use time based movement as
+ * opposed to frame based movement. Even when we have a fixed frame rate, we
+ * just use a constant time step. The thing is when using time based movement
+ * you run into problems with floating point errors which require vector math
+ * to fix, and vector math is beyond the scope of this tutorial which is why
+ * frame based movement is used for most of the tutorials.
+ */
 void Dot_handleEvent(Dot *d, SDL_Event *e)
 {
 	if(e->type == SDL_KEYDOWN && e->key.repeat == 0) {
@@ -236,6 +271,18 @@ void Dot_handleEvent(Dot *d, SDL_Event *e)
 	}
 }
 
+/*
+ * Here is the move function changed for time based movement as opposed to
+ * frame based movement.
+ * 
+ * We update the position by moving it over by velocity * time. Say if we had
+ * (for simplicity's sake) a velocity of 600 pixels per second and a time step
+ * of 1 60th of a second. This means we would move over by 600 * 1/60 pixels or
+ * 10 pixels.
+ * 
+ * Because of the non uniform movement we can't just move back when we go off
+ * screen, we have to correct the value to be something on screen.
+ */
 void Dot_move(Dot *d, float timeStep)
 {
 	d->mPosX += d->mVelX * timeStep;
@@ -253,6 +300,10 @@ void Dot_move(Dot *d, float timeStep)
 		d->mPosY = SCREEN_HEIGHT - DOT_HEIGHT;
 }
 
+/*
+ * To prevent the compiler from barking at us, we convert the positions to
+ * integers when rendering the dot.
+ */
 void Dot_render(Dot *d)
 {
 	LTexture_render(&gDotTexture, (int)d->mPosX, (int)d->mPosY,
@@ -279,6 +330,11 @@ void close_all()
 	SDL_Quit();
 }
 
+/*
+ * For this demo we disabled vsync to show it can run regardless of the frame
+ * rate. In order to know how much time has passed between renders, we need to
+ * timer to keep track of the time step.
+ */
 int main(int argc, char* args[])
 {
 	LTimer stepTimer;

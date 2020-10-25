@@ -4,6 +4,78 @@
  * Note: From now on the tutorials will only cover key parts of source code.
  * For the full program, you will have to download the full source code. 
  */
+#include <SDL2/SDL.h>
+
+#define SCREEN_WIDTH	640
+#define SCREEN_HEIGHT	480
+
+SDL_Window* wWindow = NULL;
+SDL_Surface* sMainSurface = NULL;      /* SDL_Surface uses cpu rendering */
+SDL_Surface* sHelloWorld = NULL;
+
+short init()
+{
+	if(SDL_Init(SDL_INIT_VIDEO) < 0) {
+		SDL_Log("%s(), SDL_Init failed. %s", __func__, SDL_GetError());
+		return -1;
+	}
+
+	wWindow = SDL_CreateWindow(
+					"SDL Tutorial",
+					SDL_WINDOWPOS_UNDEFINED,
+					SDL_WINDOWPOS_UNDEFINED,
+					SCREEN_WIDTH, SCREEN_HEIGHT,
+					SDL_WINDOW_SHOWN);
+	if(wWindow == NULL) {
+		SDL_Log("%s(), SDL_CreateWindow failed. %s", __func__, SDL_GetError());
+		return -1;
+	}
+	
+	sMainSurface = SDL_GetWindowSurface(wWindow);
+
+	return 0;
+}
+
+short loadMedia()
+{
+	sHelloWorld = SDL_LoadBMP("hello_world.bmp");
+
+	if(sHelloWorld == NULL) {
+		SDL_Log("%s(), SDL_LoadBMP failed. %s", __func__, SDL_GetError());
+		return -1;
+	}
+
+	return 0;
+}
+
+void close_all()
+{
+	SDL_FreeSurface(sHelloWorld);
+	sHelloWorld = NULL;
+
+	SDL_DestroyWindow(wWindow);
+	wWindow = NULL;
+
+	SDL_Quit();
+}
+
+int main(int argc, char* args[])
+{
+	if(init())
+		goto equit;
+
+	if(loadMedia())
+		goto equit;
+
+	SDL_BlitSurface(sHelloWorld, NULL, sMainSurface, NULL);
+	SDL_UpdateWindowSurface(wWindow);
+	SDL_Delay(2000);
+equit:
+	close_all();
+
+	return 0;
+}
+
 /*
  * In the first tutorial, we put everything in the main function. Since it was
  * a small program we can get away with that, but in real programs (like video
@@ -36,15 +108,6 @@
  * Also, always remember to initialize your pointers. We set them to NULL
  * immediately when declaring them. 
  */
-#include <SDL2/SDL.h>
-#include <stdio.h>
-
-#define SCREEN_WIDTH	640
-#define SCREEN_HEIGHT	480
-
-SDL_Window* wWindow = NULL;
-SDL_Surface* sMainSurface = NULL;
-SDL_Surface* sHelloWorld = NULL;
 
 /*
  * As you can see here, we've taken the SDL initialization and the window
@@ -55,28 +118,6 @@ SDL_Surface* sHelloWorld = NULL;
  * to get the image inside of the window. So we call SDL_GetWindowSurface to
  * grab the surface contained by the window.
  */
-short init()
-{
-	if(SDL_Init(SDL_INIT_VIDEO) < 0) {
-		SDL_Log("%s(), SDL_Init failed. %s", __func__, SDL_GetError());
-		return -1;
-	}
-
-	wWindow = SDL_CreateWindow(
-					"SDL Tutorial",
-					SDL_WINDOWPOS_UNDEFINED,
-					SDL_WINDOWPOS_UNDEFINED,
-					SCREEN_WIDTH, SCREEN_HEIGHT,
-					SDL_WINDOW_SHOWN);
-	if(wWindow == NULL) {
-		SDL_Log("%s(), SDL_CreateWindow failed.", __func__);
-		return -1;
-	}
-	
-	sMainSurface = SDL_GetWindowSurface(wWindow);
-
-	return 0;
-}
 
 /*
  * In the load media function we load our image using SDL_LoadBMP. SDL_LoadBMP
@@ -93,17 +134,6 @@ short init()
  * located. So if your application can't find the image, make sure it is in the
  * right place. 
  */
-short loadMedia()
-{
-	sHelloWorld = SDL_LoadBMP("hello_world.bmp");
-
-	if(sHelloWorld == NULL) {
-		SDL_Log("%s(), SDL_LoadBMP failed.", __func__);
-		return -1;
-	}
-
-	return 0;
-}
 
 /*
  * In our clean up code, we destroy the window and quit SDL like before but we
@@ -114,16 +144,6 @@ short loadMedia()
  * Make sure to get into the habit of having your pointers point to NULL when
  * they're not pointing to anything.
  */
-void close_all()
-{
-	SDL_FreeSurface(sHelloWorld);
-	sHelloWorld = NULL;
-
-	SDL_DestroyWindow(wWindow);
-	wWindow = NULL;
-
-	SDL_Quit();
-}
 
 /*
  * In our main function we initialize SDL and load the image. If that succeeded
@@ -137,15 +157,6 @@ void close_all()
  * Now if this was the only code for drawing we had, we still wouldn't see the
  * image we loaded on the screen. There's one more step. 
  */
-int main(int argc, char* args[])
-{
-	if(init())
-		goto equit;
-
-	if(loadMedia())
-		goto equit;
-
-	SDL_BlitSurface(sHelloWorld, NULL, sMainSurface, NULL);
 
 /*
  * After drawing everything on the screen that we want to show for this frame
@@ -165,15 +176,9 @@ int main(int argc, char* args[])
  * This also means that you don't call SDL_UpdateWindowSurface after every
  * blit, only after all the blits for the current frame are done.
  */
-	SDL_UpdateWindowSurface(wWindow);
+
 /*
  * Now that we've rendered everything to the window, we delay for two seconds
  * so the window doesn't just disappear. After the wait is done, we close out
  * our program.
  */
-	SDL_Delay(2000);
-equit:
-	close_all();
-
-	return 0;
-}

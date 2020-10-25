@@ -1,8 +1,41 @@
 /*
- * This program demonstrates multithreading using SDL_Thread and SDL_CreateThread.
+ * Multithreading
  *
- * https://wiki.libsdl.org/SDL_Thread
- * https://wiki.libsdl.org/SDL_CreateThread
+ * Multithreading can be used to make your program execute two things at once
+ * and take advantage of multithreaded architectures. Here we'll make a simple
+ * program that outputs to the console while the main thread runs.* This
+ * program demonstrates multithreading using SDL_Thread and SDL_CreateThread.
+ *
+ * There is a saying in computer science; Premature optimization is the root of
+ * all evil
+ *
+ * A major problem with newbie programmers is that they want to be like the
+ * professionals without paying their dues. They hear about a technology that
+ * the latest and greatest developers out there are using and they think if the
+ * use it too it will make them magically better.
+ * 
+ * One of these tools is multithreading. Since multicore processors launched at
+ * a consumer level in the early 00s, developers have been using this new tech
+ * to squeeze out as much performance as they can from their applications.
+ * 
+ * Here's the important part: a poorly made multithreaded program can perform
+ * worse than single thread program. Much worse. The fact is that
+ * multithreading inherently adds more overhead because threads then have to be
+ * managed. If you do not know the costs of using different multithreading
+ * tools, you can end up with code that is much slower than its single threaded
+ * equivalent.
+ * 
+ * The general rule is if you don't know:
+ * 
+ *     What cache coherency is.
+ *     What cache alignment is.
+ *     How operating systems handle threads and processes.
+ *     How to use a profiler.
+ * 
+ * You should not be trying to use multithreaded optimization. Play with fire
+ * and you will get burned. However doing something not for the sake of
+ * performance like asynchronous file loading isn't a bad idea for intermediate
+ * game developers.
  */
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_thread.h>
@@ -20,6 +53,11 @@ typedef struct {
 	int mHeight;
 } LTexture;
 
+/*
+ * Just like with callback functions, thread functions need to declared a
+ * certain way. They need to take in a void pointer as an argument and return
+ * an integer.
+ */
 int threadFunction(void* data);
 
 SDL_Window* gWindow = NULL;
@@ -41,7 +79,7 @@ short init()
 					SCREEN_HEIGHT,
 					SDL_WINDOW_SHOWN);
 	if(gWindow == NULL) {
-		SDL_Log("%s(), SDL_CreateWindow failed.", __func__);
+		SDL_Log("%s(), SDL_CreateWindow failed. %s", __func__, SDL_GetError());
 		return -1;
 	}
 
@@ -51,7 +89,7 @@ short init()
 					SDL_RENDERER_ACCELERATED
 					| SDL_RENDERER_PRESENTVSYNC);
 	if(gRenderer == NULL) {
-		SDL_Log("%s(), SDL_CreateRenderer failed.", __func__);
+		SDL_Log("%s(), SDL_CreateRenderer failed. %s", __func__, SDL_GetError());
 		return -1;
 	}
 
@@ -85,8 +123,8 @@ short LTexture_loadFromFile(LTexture *lt, char *path)
 
 	SDL_Surface* loadedSurface = IMG_Load(path);
 	if(loadedSurface == NULL) {
-		SDL_Log("%s(), IMG_Load failed to load \"%s\".",
-				__func__, path);
+		SDL_Log("%s(), IMG_Load failed. %s", __func__, IMG_GetError());
+
 		return -1;
 	}
 
@@ -106,7 +144,7 @@ short LTexture_loadFromFile(LTexture *lt, char *path)
 					formattedSurface->w,
 					formattedSurface->h);
 	if(newTexture == NULL) {
-		SDL_Log("%s(), SDL_CreateTextureFromSurface failed.", __func__);
+		SDL_Log("%s(), SDL_CreateTextureFromSurface failed. %s", __func__, SDL_GetError());
 		return -1;
 	}
 
@@ -185,6 +223,10 @@ void close_all()
 	SDL_Quit();
 }
 
+/*
+ * Our thread function is fairly simple. All it does is take in the data as an
+ * integer and uses it to print a message to the console.
+ */
 int threadFunction(void* data)
 {
 	int *i = (int*)data;
@@ -193,6 +235,17 @@ int threadFunction(void* data)
 	return 0;
 }
 
+/*
+ * Before we enter the main loop we run the thread function using
+ * SDL_CreateThread. This call will run the function in first argument, give it
+ * the name in the second argument (names are used to identify it for debugging
+ * purposes), and passes in the data from the third argument.
+ *
+ * The thread will then execute while the main thread is still going. In case
+ * the main loop ends before the thread finishes, we make a call to
+ * SDL_WaitThread to make sure the thread finishes before the application
+ * closes.
+ */
 int main(int argc, char* args[])
 {
 	if(init())

@@ -1,9 +1,10 @@
 /*
- * This program demonstrates the use of semaphores, using SDL_SemWait and
- * SDL_SemPost.
+ * Semaphores
  *
- * https://wiki.libsdl.org/SDL_SemWait
- * https://wiki.libsdl.org/SDL_SemPost
+ * The only multithreading we've done had the main thread and a second thread
+ * each do their own thing. In most cases two threads will have to share data
+ * and with semaphores you can prevent two threads from accidentally accessing
+ * the same piece of data at once.
  */
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_thread.h>
@@ -21,11 +22,20 @@ typedef struct {
 	int mHeight;
 } LTexture;
 
+/*
+ * Here is our worker thread function. We will spawn two threads that will each
+ * execute their copy of this code.
+ *
+ * The object gDataLock is our semaphore which will lock our gData buffer. A
+ * single integer is not much of a data buffer to protect, but since there are
+ * going to be two threads that are going to be reading and writing to it we
+ * need to make sure it is only being accessed by one thread at a time.
+ */
+int worker(void *data);
 SDL_Window* gWindow = NULL;
 SDL_Renderer* gRenderer = NULL;
 LTexture gSplashTexture;
 SDL_sem* gDataLock = NULL;
-
 int gData = -1;	
 
 short init()
@@ -43,7 +53,7 @@ short init()
 					SCREEN_HEIGHT,
 					SDL_WINDOW_SHOWN);
 	if(gWindow == NULL) {
-		SDL_Log("%s(), SDL_CreateWindow failed.", __func__);
+		SDL_Log("%s(), SDL_CreateWindow failed. %s", __func__, SDL_GetError());
 		return -1;
 	}
 
@@ -53,7 +63,7 @@ short init()
 					SDL_RENDERER_ACCELERATED
 					| SDL_RENDERER_PRESENTVSYNC);
 	if(gRenderer == NULL) {
-		SDL_Log("%s(), SDL_CreateRenderer failed.", __func__);
+		SDL_Log("%s(), SDL_CreateRenderer failed. %s", __func__, SDL_GetError());
 		return -1;
 	}
 
@@ -87,8 +97,8 @@ short LTexture_loadFromFile(LTexture *lt, char *path)
 
 	SDL_Surface* loadedSurface = IMG_Load(path);
 	if(loadedSurface == NULL) {
-		SDL_Log("%s(), IMG_Load failed to load \"%s\".",
-				__func__, path);
+		SDL_Log("%s(), IMG_Load failed. %s", __func__, IMG_GetError());
+
 		return -1;
 	}
 
@@ -109,7 +119,7 @@ short LTexture_loadFromFile(LTexture *lt, char *path)
 					formattedSurface->w,
 					formattedSurface->h);
 	if(newTexture == NULL) {
-		SDL_Log("%s(), SDL_CreateTextureFromSurface failed.", __func__);
+		SDL_Log("%s(), SDL_CreateTextureFromSurface failed. %s", __func__, SDL_GetError());
 		return -1;
 	}
 
@@ -168,6 +178,17 @@ void LTexture_render(
 	SDL_RenderCopy(gRenderer, lt->mTexture, clip, &renderQuad);
 }
 
+/*
+ * To create a semaphore we call SDL_CreateSemaphore with an initial value for
+ * the semaphore. The initial value controls how many times code can pass
+ * through a semaphore before it locks.
+ *
+ * For example, say you only want 4 threads to run at a time because you're on
+ * hardware with 4 cores. You'd give the semaphore a value of 4 to start with
+ * to make sure no more than 4 threads run at the same time. In this demo we
+ * only want 1 thread accessing the data buffer at once so the mutex starts
+ * with a value of one.
+ */
 short loadMedia()
 {
 	gDataLock = SDL_CreateSemaphore(1);
@@ -178,6 +199,9 @@ short loadMedia()
 	return 0;
 }
 
+/*
+ * When we're done with a semaphore we call SDL_DestroySemaphore.
+ */
 void close_all()
 {
 	LTexture_free(&gSplashTexture);
@@ -194,6 +218,28 @@ void close_all()
 	SDL_Quit();
 }
 
+/*
+ * Here we are starting our worker thread. An important thing to know is that
+ * seeding your random value is done per thread, so make sure you seed your
+ * random values for each thread you run.
+ *
+ * What each worker thread does is delay for a semi random amount, print the
+ * data that is there when it started working, assign a random number to it,
+ * print the number assigned to the data buffer, and delay for a bit more
+ * before working again. The reason we need to lock data is because we do not
+ * want two threads reading or writing our shared data at the same time.
+ *
+ * Notice the calls to SDL_SemWait and SDL_SemPost. What's in between them is
+ * the critical section or the code we only want one thread to access at once.
+ * SDL_SemWait decrements the semaphore count and since the initial value is
+ * one, it will lock. After the critical section executes, we call SDL_SemPost
+ * to increment the semaphore and unlock it.
+ *
+ * If we have a situation where thread A locks and then thread B tries to lock,
+ * thread B will wait until thread A finishes the critical section and unlocks
+ * the semaphore. With the critical section protected by a semaphore
+ * lock/unlock pair, only one thread can execute the critical section at once.
+ */
 int worker(void* data)
 {
 	char *str;
@@ -219,6 +265,16 @@ int worker(void* data)
 	return 0;
 }
 
+/*
+ * In the main function before we enter the main loop we launch two worker
+ * threads with a bit of random delay in between them. There no guarantee
+ * thread A or B will work first but since the data they share is protected, we
+ * know they won't try to execute the same piece of code at once.
+ *
+ * Here the main thread runs while the threads to their work. If the main loop
+ * end before the threads finish working, we wait on them to finish with
+ * SDL_WaitThread.
+ */
 int main(int argc, char* args[])
 {
 	if(init())

@@ -4,7 +4,7 @@ CC = gcc
 
 COMPILER_FLAGS = -g -Wall -Wextra -pedantic -fsanitize=address -fno-omit-frame-pointer
 
-LINKER_FLAGS = -lSDL2 -lSDL2_image
+LINKER_FLAGS = -lSDL2
 
 OBJ_NAME = p08_geometry_rendering
 
