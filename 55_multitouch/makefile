@@ -1,12 +1,22 @@
-OBJS = 55_multitouch.cpp
+APP = p55_multitouch
+OBJ = 55_multitouch.c
+INC = /opt/homebrew/Cellar/sdl2/2.28.4 \
+	/opt/homebrew/Cellar/sdl2_image/2.6.3_2
+CC = clang -arch arm64
 
-CC = g++
+# Preprocessor flags
+CPPFLAGS += $(foreach D,$(INC),-I$(D)/include)
 
-COMPILER_FLAGS = -g -Wall -Wextra -pedantic -fsanitize=address -fno-omit-frame-pointer -fpermissive
+# Compiler flags
+# CFLAGS += -g -Wall -Werror -pedantic
+CFLAGS += -target arm64-apple-darwin 
+#CFLAGS += -fsanitize=address -fno-omit-frame-pointer 
+#CFLAGS += -v
 
-LINKER_FLAGS = -lSDL2 -lSDL2_image
+# Linker flags
+LDFLAGS += $(foreach D,$(INC),-L$(D)/lib)
+LDFLAGS += -lSDL2 -lSDL2_image
 
-OBJ_NAME = p55_multitouch
-
-all: $(OBJS)
-	$(CC) $(OBJS) $(COMPILER_FLAGS) $(LINKER_FLAGS) -o $(OBJ_NAME)
+# Compilation target
+all : $(OBJ)
+	$(CC) $(OBJ) $(CPPFLAGS) $(CFLAGS) $(LDFLAGS) -o $(APP)
