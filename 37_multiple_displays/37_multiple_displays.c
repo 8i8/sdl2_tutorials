@@ -269,8 +269,7 @@ short init(void)
 	}
 
 	if(SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "1") == 0)
-		SDL_Log("%s(), Warning: Linear texture filtering not enabled.",
-
+		SDL_Log("Warning: Linear texture filtering not enabled.");
 
 	gTotalDisplays = SDL_GetNumVideoDisplays();
 	if(gTotalDisplays < 2)

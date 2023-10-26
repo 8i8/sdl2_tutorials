@@ -64,6 +64,9 @@ short init(void)
 		return -1;
 	}
 
+	if(SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "1") == 0)
+		SDL_Log("Warning: Linear texture filtering not enabled.");
+
     for (int i = 0; i < SDL_NumJoysticks(); i++) {
         if (SDL_IsGameController(i)) {
             gGameController = SDL_GameControllerOpen(i);
@@ -73,9 +76,6 @@ short init(void)
 			break;
         }
     }
-
-	if(SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "1") == 0)
-		SDL_Log("Warning: Linear texture filtering not enabled.");
 
 	gWindow = SDL_CreateWindow(
 					"SDL Tutorial",

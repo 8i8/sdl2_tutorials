@@ -7,7 +7,6 @@
  */
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
-#include <stdio.h>
 
 #define SCREEN_WIDTH	640
 #define SCREEN_HEIGHT	480
@@ -77,7 +76,6 @@ short init(void)
 	if(SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "1") == 0) {
 		SDL_Log("%s(), Warning: Linear texture filtering not enabled. %s", 
 				__func__, SDL_GetError());
-		return -1;
 	}
 
     for (int i = 0; i < SDL_NumJoysticks(); i++) {
@@ -86,7 +84,7 @@ short init(void)
 			if(gGameController == NULL) {
 				SDL_Log("%s(), SDL_JoystickOpen failed. %s", __func__, SDL_GetError());
 			}
-			break;
+			continue;
         }
     }
 

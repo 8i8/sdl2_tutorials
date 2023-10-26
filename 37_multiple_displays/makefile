@@ -1,12 +1,21 @@
-OBJS = 37_multiple_displays.c
+APP = p37_multiple_displays
+OBJ = 37_multiple_displays.c
+INC = /opt/homebrew/Cellar/sdl2/2.28.4
+CC = clang -arch arm64
 
-CC = gcc
+# Preprocessor flags
+CPPFLAGS += $(foreach D,$(INC),-I$(D)/include)
 
-COMPILER_FLAGS = -g -Wall -Wextra -pedantic -fsanitize=address -fno-omit-frame-pointer
+# Compiler flags
+# CFLAGS += -g -Wall -Werror -pedantic
+CFLAGS += -target arm64-apple-darwin 
+#CFLAGS += -fsanitize=address -fno-omit-frame-pointer 
+#CFLAGS += -v
 
-LINKER_FLAGS = -lSDL2
+# Linker flags
+LDFLAGS += $(foreach D,$(INC),-L$(D)/lib)
+LDFLAGS += -lSDL2
 
-OBJ_NAME = p37_multiple_displays
-
-all: $(OBJS)
-	$(CC) $(OBJS) $(COMPILER_FLAGS) $(LINKER_FLAGS) -o $(OBJ_NAME)
+# Compilation target
+all : $(OBJ)
+	$(CC) $(OBJ) $(CPPFLAGS) $(CFLAGS) $(LDFLAGS) -o $(APP)
